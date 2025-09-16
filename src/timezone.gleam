@@ -1,3 +1,5 @@
+import envoy
+import filepath
 import gleam/bit_array
 import gleam/dict
 import gleam/int
@@ -417,4 +419,13 @@ pub fn get_slice(
       False -> list.Stop(acc)
     }
   })
+}
+
+pub fn tzfile_path(name: String) -> String {
+  let root = case envoy.get("ZONEINFO") {
+    Ok(dir) -> dir
+    _ -> "/usr/share/zoneinfo"
+  }
+
+  filepath.join(root, name)
 }
