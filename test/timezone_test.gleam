@@ -20,9 +20,12 @@ pub fn hello_world_test() {
 
 pub fn parse_test() {
   let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
-  use tz <- result.try(timezone.parse(tzdata))
+  use tz <- result.try(timezone.parse(tzdata) |> result.replace_error(Nil))
   echo tz
   let slices = timezone.create_slices(tz.fields)
-  echo timezone.get_slice(timestamp.system_time(), slices)
+  let system_time = timestamp.system_time()
+  use slice_of_interest <- result.try(timezone.get_slice(system_time, slices))
+  let #(dt, tm) = timestamp.to_calendar(system_time, slice_of_interest.utoff)
+  echo #(dt, tm, slice_of_interest.designation)
   Ok(Nil)
 }

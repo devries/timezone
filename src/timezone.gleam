@@ -4,6 +4,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/result
+import gleam/time/duration.{type Duration}
 import gleam/time/timestamp
 
 pub fn main() -> Nil {
@@ -54,7 +55,7 @@ pub type TTInfo {
 }
 
 pub type TTSlice {
-  TTSlice(start_time: Int, utoff: Int, isdst: Bool, designation: String)
+  TTSlice(start_time: Int, utoff: Duration, isdst: Bool, designation: String)
 }
 
 type Parser(a, b) =
@@ -395,7 +396,7 @@ pub fn create_slices(fields: TimeZoneFields) -> List(TTSlice) {
           0 -> False
           _ -> True
         }
-        Ok(TTSlice(tup.0, ttinfo.utoff, isdst, designation))
+        Ok(TTSlice(tup.0, duration.seconds(ttinfo.utoff), isdst, designation))
       }
       _ -> Error(Nil)
     }
