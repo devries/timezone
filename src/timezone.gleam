@@ -406,14 +406,26 @@ pub fn create_slices(fields: TimeZoneFields) -> List(TTSlice) {
   |> result.values
 }
 
+pub fn default_slice(fields: TimeZoneFields) -> Result(TTSlice, Nil) {
+  use ttinfo <- result.try(list.first(fields.ttinfos))
+  use designation <- result.try(list.first(fields.designations))
+  let isdst = case ttinfo.isdst {
+    0 -> False
+    _ -> True
+  }
+
+  Ok(TTSlice(0, duration.seconds(ttinfo.utoff), isdst, designation))
+}
+
 pub fn get_slice(
   ts: timestamp.Timestamp,
   slices: List(TTSlice),
+  default: Result(TTSlice, Nil),
 ) -> Result(TTSlice, Nil) {
   let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
 
   slices
-  |> list.fold_until(list.first(slices), fn(acc, slice) {
+  |> list.fold_until(default, fn(acc, slice) {
     case slice.start_time < seconds {
       True -> list.Continue(Ok(slice))
       False -> list.Stop(acc)

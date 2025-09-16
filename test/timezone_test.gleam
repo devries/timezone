@@ -1,8 +1,5 @@
 import gleam/bit_array
-import gleam/io
-import gleam/list
 import gleam/result
-import gleam/string
 import gleam/time/timestamp
 import gleeunit
 import gleeunit/should
@@ -24,17 +21,22 @@ pub fn hello_world_test() {
 }
 
 pub fn parse_test() {
-  let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
+  // let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
+  let assert Ok(tzdata) = simplifile.read_bits(timezone.tzfile_path("Iceland"))
   use tz <- result.try(timezone.parse(tzdata) |> result.replace_error(Nil))
   echo tz
   let slices = timezone.create_slices(tz.fields)
   let system_time = timestamp.system_time()
-  use slice_of_interest <- result.try(timezone.get_slice(system_time, slices))
+  use slice_of_interest <- result.try(timezone.get_slice(
+    system_time,
+    slices,
+    timezone.default_slice(tz.fields),
+  ))
   let #(dt, tm) = timestamp.to_calendar(system_time, slice_of_interest.utoff)
   echo #(dt, tm, slice_of_interest.designation)
   Ok(Nil)
 }
 
 pub fn path_test() {
-  should.be_ok(simplifile.read_bits(timezone.tzfile_path("America/New_York")))
+  should.be_ok(simplifile.read_bits(timezone.tzfile_path("UTC")))
 }
