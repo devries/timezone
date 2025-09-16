@@ -226,7 +226,7 @@ fn parse_v2_section(
 
   // Get the ttinfo structures used in this time zone
   use ttinfos, remain <- parse_list(header.typecnt, remain, [], parse_ttinfo)
-  echo ttinfos
+
   // Get the designations for each ttinfo.
   use designation_tuples <- result.try(
     ttinfos
