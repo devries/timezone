@@ -1,8 +1,10 @@
 import gleam/bit_array
+import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/result
+import gleam/time/timestamp
 
 pub fn main() -> Nil {
   io.println("Hello from timezone!")
@@ -49,6 +51,10 @@ pub type TimeZoneData {
 
 pub type TTInfo {
   TTInfo(utoff: Int, isdst: Int, desigidx: Int)
+}
+
+pub type TTSlice {
+  TTSlice(start_time: Int, utoff: Int, isdst: Bool, designation: String)
 }
 
 type Parser(a, b) =
@@ -371,4 +377,43 @@ fn split_at_null(
     <<_:bits-size(start)>> -> Error(Nil)
     _ -> split_at_null(bits, start + 8)
   }
+}
+
+// Turn time zone fields into a list of timezone information slices
+pub fn create_slices(fields: TimeZoneFields) -> List(TTSlice) {
+  let infos =
+    list.zip(fields.ttinfos, fields.designations)
+    |> list.index_map(fn(tup, idx) { #(idx, tup) })
+    |> dict.from_list
+
+  list.zip(fields.transition_times, fields.time_types)
+  |> list.map(fn(tup) {
+    let info_tuple = dict.get(infos, tup.1)
+    case info_tuple {
+      Ok(#(ttinfo, designation)) -> {
+        let isdst = case ttinfo.isdst {
+          0 -> False
+          _ -> True
+        }
+        Ok(TTSlice(tup.0, ttinfo.utoff, isdst, designation))
+      }
+      _ -> Error(Nil)
+    }
+  })
+  |> result.values
+}
+
+pub fn get_slice(
+  ts: timestamp.Timestamp,
+  slices: List(TTSlice),
+) -> Result(TTSlice, Nil) {
+  let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
+
+  slices
+  |> list.fold_until(list.first(slices), fn(acc, slice) {
+    case slice.start_time < seconds {
+      True -> list.Continue(Ok(slice))
+      False -> list.Stop(acc)
+    }
+  })
 }

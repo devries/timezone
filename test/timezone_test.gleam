@@ -1,4 +1,6 @@
 import gleam/bit_array
+import gleam/result
+import gleam/time/timestamp
 import gleeunit
 import timezone
 
@@ -18,5 +20,9 @@ pub fn hello_world_test() {
 
 pub fn parse_test() {
   let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
-  echo timezone.parse(tzdata)
+  use tz <- result.try(timezone.parse(tzdata))
+  echo tz
+  let slices = timezone.create_slices(tz.fields)
+  echo timezone.get_slice(timestamp.system_time(), slices)
+  Ok(Nil)
 }
