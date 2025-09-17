@@ -1,15 +1,19 @@
 # timezone
 
+<!--#
 [![Package Version](https://img.shields.io/hexpm/v/timezone)](https://hex.pm/packages/timezone)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/timezone/)
+-->
 
 > We could really do with a timezone database package with a
 > fn(Timestamp, Zone) -> #(Date, TimeOfDay) function
 >
 > --- Louis Pilfold
 
-```sh
-gleam add timezone
+To use, add the following entry in your `gleam.toml` file dependencies:
+
+```
+timezone = { git = "git@github.com:devries/timezone.git", ref = "main" }
 ```
 
 A timezone library which uses your local ZONEINFO files to convert
