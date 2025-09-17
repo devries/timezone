@@ -62,7 +62,7 @@ pub fn parse_components_test() {
   assert tz.fields.designations == ["LMT", "EDT", "EST", "EST", "EWT", "EPT"]
 }
 
-pub fn test_get_time_in_local_zone() {
+pub fn get_time_in_local_zone_test() {
   let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
   let ts = timestamp.from_unix_seconds(1_758_086_280)
   assert timezone.get_time_with_tzdata(ts, tzdata)
@@ -75,7 +75,7 @@ pub fn test_get_time_in_local_zone() {
     ))
 }
 
-pub fn test_get_time_in_utc_zone() {
+pub fn get_time_in_utc_zone_test() {
   let assert Ok(tzdata) = bit_array.base64_decode(tzsample2)
   let ts = timestamp.from_unix_seconds(1_758_086_280)
   assert timezone.get_time_with_tzdata(ts, tzdata)

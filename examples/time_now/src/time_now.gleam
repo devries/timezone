@@ -6,9 +6,17 @@ import gleam/time/calendar
 import gleam/time/timestamp
 import timezone
 
-pub fn main() -> Result(Nil, timezone.TimeZoneError) {
+pub fn main() {
   let now = timestamp.system_time()
+  case print_all_times(now) {
+    Ok(_) -> Nil
+    Error(_) -> io.println("Encountered an error while running")
+  }
+}
 
+fn print_all_times(
+  now: timestamp.Timestamp,
+) -> Result(Nil, timezone.TimeZoneError) {
   use new_york <- result.try(timezone.get_time_in_zone(now, "America/New_York"))
   use vevay <- result.try(timezone.get_time_in_zone(
     now,
@@ -22,6 +30,7 @@ pub fn main() -> Result(Nil, timezone.TimeZoneError) {
   use auckland <- result.try(timezone.get_time_in_zone(now, "Pacific/Auckland"))
   use cairo <- result.try(timezone.get_time_in_zone(now, "Africa/Cairo"))
   use calcutta <- result.try(timezone.get_time_in_zone(now, "Asia/Calcutta"))
+  use posix <- result.try(timezone.get_time_in_zone(now, "posixrules"))
 
   io.println("UTC:       " <> format_time(utc))
   io.println("New York:  " <> format_time(new_york))
@@ -33,6 +42,7 @@ pub fn main() -> Result(Nil, timezone.TimeZoneError) {
   io.println("Auckland:  " <> format_time(auckland))
   io.println("Cairo:     " <> format_time(cairo))
   io.println("Calcutta:  " <> format_time(calcutta))
+  io.println("POSIX:     " <> format_time(posix))
   io.println("")
   io.println("RFC3339:")
   io.println("UTC:       " <> timestamp.to_rfc3339(now, utc.offset))
@@ -44,7 +54,7 @@ pub fn main() -> Result(Nil, timezone.TimeZoneError) {
   io.println("Tokyo:     " <> timestamp.to_rfc3339(now, tokyo.offset))
   io.println("Auckland:  " <> timestamp.to_rfc3339(now, auckland.offset))
   io.println("Cairo:     " <> timestamp.to_rfc3339(now, cairo.offset))
-  io.println("Calcutta:  " <> timestamp.to_rfc3339(now, calcutta.offset))
+  io.println("POSIX:     " <> timestamp.to_rfc3339(now, posix.offset))
   Ok(Nil)
 }
 
