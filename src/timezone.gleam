@@ -1,389 +1,101 @@
 import envoy
 import filepath
-import gleam/bit_array
 import gleam/dict
-import gleam/int
-import gleam/io
 import gleam/list
 import gleam/result
+import gleam/time/calendar.{type Date, type TimeOfDay}
 import gleam/time/duration.{type Duration}
-import gleam/time/timestamp
+import gleam/time/timestamp.{type Timestamp}
+import simplifile
+import timezone/internal
 
-pub fn main() -> Nil {
-  io.println("Hello from timezone!")
-}
-
+/// Time Zone error type
 pub type TimeZoneError {
-  HeaderParseError
-  HeaderVersionError
-  BodyParseError
-  IntegerParseError
+  ParseError
+  TimeSliceError
+  ZoneFileError
 }
 
-pub type TimeZoneHeader {
-  TimeZoneHeader(
-    version: Int,
-    ttisutcnt: Int,
-    ttisstdcnt: Int,
-    leapcnt: Int,
-    timecnt: Int,
-    typecnt: Int,
-    charcnt: Int,
-  )
-}
-
-pub type TimeZoneFields {
-  TimeZoneFields(
-    transition_times: List(Int),
-    time_types: List(Int),
-    ttinfos: List(TTInfo),
-    designations: List(String),
-    leapsecond_values: List(List(Int)),
-    standard_or_wall: List(Int),
-    ut_or_local: List(Int),
-  )
-}
-
-pub type TimeZoneData {
-  TimeZoneData(
-    header: TimeZoneHeader,
-    fields: TimeZoneFields,
-    remains: BitArray,
-  )
-}
-
-pub type TTInfo {
-  TTInfo(utoff: Int, isdst: Int, desigidx: Int)
-}
-
+/// Timezone definition slice
 pub type TTSlice {
   TTSlice(start_time: Int, utoff: Duration, isdst: Bool, designation: String)
 }
 
-type Parser(a, b) =
-  fn(BitArray, fn(a, BitArray) -> Result(b, TimeZoneError)) ->
-    Result(b, TimeZoneError)
-
-pub fn parse(tzdata: BitArray) -> Result(TimeZoneData, TimeZoneError) {
-  // Parse the header for the tzfile
-  use header, fields <- parse_header(tzdata)
-
-  // Parse the first section, common to all versions
-  use first_section, remain <- parse_first_section(header, fields)
-
-  case header.version {
-    2 -> {
-      use revised_header, remain <- parse_header(remain)
-      use revised_section, remain <- parse_v2_section(revised_header, remain)
-      Ok(TimeZoneData(revised_header, revised_section, remain))
-    }
-    _ -> Ok(TimeZoneData(header, first_section, remain))
-  }
+/// Representation of time in a time zone
+pub type TimeInZone {
+  TimeInZone(
+    date: Date,
+    time_of_day: TimeOfDay,
+    designation: String,
+    is_dst: Bool,
+  )
 }
 
-fn parse_header(
+pub fn get_slice(
+  ts: timestamp.Timestamp,
+  slices: List(TTSlice),
+  default: Result(TTSlice, Nil),
+) -> Result(TTSlice, Nil) {
+  let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
+
+  slices
+  |> list.fold_until(default, fn(acc, slice) {
+    case slice.start_time < seconds {
+      True -> list.Continue(Ok(slice))
+      False -> list.Stop(acc)
+    }
+  })
+}
+
+/// Get the full path to the zoneinfo file for that
+/// time zone. Use IANA time zone identifiers such as
+/// "America/New_York".
+pub fn tzfile_path(name: String) -> String {
+  let root = case envoy.get("ZONEINFO") {
+    Ok(dir) -> dir
+    _ -> "/usr/share/zoneinfo"
+  }
+
+  filepath.join(root, name)
+}
+
+/// Given a timestamp and a zone name, get the time in that time zone.
+/// The zone_name should be an IANA identifier like "America/New_York".
+pub fn get_time_in_zone(
+  ts: Timestamp,
+  zone_name: String,
+) -> Result(TimeInZone, TimeZoneError) {
+  // Parse the datafile
+  use tzdata <- result.try(
+    tzfile_path(zone_name)
+    |> simplifile.read_bits
+    |> result.replace_error(ZoneFileError),
+  )
+  get_time_with_tzdata(ts, tzdata)
+}
+
+/// Given a timestamp and the binary contents of a tzfile, get the time in
+/// that time zone.
+pub fn get_time_with_tzdata(
+  ts: Timestamp,
   tzdata: BitArray,
-  next: fn(TimeZoneHeader, BitArray) -> Result(a, TimeZoneError),
-) -> Result(a, TimeZoneError) {
-  case tzdata {
-    <<
-      "TZif":utf8,
-      version:bits-size(8),
-      0:unit(8)-size(15),
-      ttisutcnt:unsigned-big-int-size(32),
-      ttisstdcnt:unsigned-big-int-size(32),
-      leapcnt:unsigned-big-int-size(32),
-      timecnt:unsigned-big-int-size(32),
-      typecnt:unsigned-big-int-size(32),
-      charcnt:unsigned-big-int-size(32),
-      fields:bits,
-    >> -> {
-      use parsed_version <- result.try(case version {
-        <<0>> -> Ok(1)
-        <<"2">> -> Ok(2)
-        <<"3">> -> Ok(3)
-        <<"4">> -> Ok(4)
-        _ -> Error(HeaderVersionError)
-      })
-      let header =
-        TimeZoneHeader(
-          parsed_version,
-          ttisutcnt,
-          ttisstdcnt,
-          leapcnt,
-          timecnt,
-          typecnt,
-          charcnt,
-        )
-
-      next(header, fields)
-    }
-    _ -> Error(HeaderParseError)
-  }
-}
-
-fn parse_first_section(
-  header: TimeZoneHeader,
-  fields: BitArray,
-  next: fn(TimeZoneFields, BitArray) -> Result(a, TimeZoneError),
-) -> Result(a, TimeZoneError) {
-  // Get list of time zone transition times
-  use transition_times, remain <- parse_list(
-    header.timecnt,
-    fields,
-    [],
-    integer_parser(32),
-  )
-  // Get the ttinfo index associated with each transition time
-  use ttinfo_indecies, remain <- parse_list(
-    header.timecnt,
-    remain,
-    [],
-    unsigned_integer_parser(8),
+) -> Result(TimeInZone, TimeZoneError) {
+  use tz <- result.try(
+    internal.parse(tzdata) |> result.replace_error(ParseError),
   )
 
-  // Get the ttinfo structures used in this time zone
-  use ttinfos, remain <- parse_list(header.typecnt, remain, [], parse_ttinfo)
-
-  // Get the designations for each ttinfo.
-  use designation_tuples <- result.try(
-    ttinfos
-    |> list.try_map(fn(ttinfo) {
-      let desigidx = ttinfo.desigidx
-      case remain {
-        <<_:unit(8)-size(desigidx), substring:bits>> -> {
-          use s, rest <- parse_null_terminated_string(substring)
-          Ok(#(s, rest))
-        }
-        _ -> Error(BodyParseError)
-      }
-    }),
+  // Pull out the TTSlice representing the timezone at that timestamp
+  use slice_of_interest <- result.try(
+    get_slice(ts, create_slices(tz.fields), default_slice(tz.fields))
+    |> result.replace_error(TimeSliceError),
   )
+  let #(dt, tm) = timestamp.to_calendar(ts, slice_of_interest.utoff)
 
-  // Some messing around to try to get past the null terminated strings
-  use smallest_bitarray_tuple <- result.try(
-    designation_tuples
-    |> list.map(fn(tup) { #(-bit_array.bit_size(tup.1), tup.1) })
-    |> list.max(fn(tupa, tupb) { int.compare(tupa.0, tupb.0) })
-    |> result.replace_error(BodyParseError),
-  )
-
-  let remain = smallest_bitarray_tuple.1
-
-  let designations = designation_tuples |> list.map(fn(tup) { tup.0 })
-
-  // Get leap second information
-  use leapsecond_integers, remain <- parse_list(
-    header.leapcnt,
-    remain,
-    [],
-    integer_parser(32),
-  )
-
-  let leapsecond_values = leapsecond_integers |> list.sized_chunk(2)
-
-  // Booleans to indicate if these are standard time or local time indicators
-  use standard_wall_indicators, remain <- parse_list(
-    header.ttisstdcnt,
-    remain,
-    [],
-    unsigned_integer_parser(8),
-  )
-
-  // Booleans to indicate if these are UT or local indicators
-  use ut_local_indicators, remain <- parse_list(
-    header.ttisutcnt,
-    remain,
-    [],
-    unsigned_integer_parser(8),
-  )
-
-  next(
-    TimeZoneFields(
-      transition_times,
-      ttinfo_indecies,
-      ttinfos,
-      designations,
-      leapsecond_values,
-      standard_wall_indicators,
-      ut_local_indicators,
-    ),
-    remain,
-  )
-}
-
-fn parse_v2_section(
-  header: TimeZoneHeader,
-  fields: BitArray,
-  next: fn(TimeZoneFields, BitArray) -> Result(a, TimeZoneError),
-) -> Result(a, TimeZoneError) {
-  // Get list of time zone transition times
-  use transition_times, remain <- parse_list(
-    header.timecnt,
-    fields,
-    [],
-    integer_parser(64),
-  )
-
-  // Get the ttinfo index associated with each transition time
-  use ttinfo_indecies, remain <- parse_list(
-    header.timecnt,
-    remain,
-    [],
-    unsigned_integer_parser(8),
-  )
-
-  // Get the ttinfo structures used in this time zone
-  use ttinfos, remain <- parse_list(header.typecnt, remain, [], parse_ttinfo)
-
-  // Get the designations for each ttinfo.
-  use designation_tuples <- result.try(
-    ttinfos
-    |> list.try_map(fn(ttinfo) {
-      let desigidx = ttinfo.desigidx
-      case remain {
-        <<_:unit(8)-size(desigidx), substring:bits>> -> {
-          use s, rest <- parse_null_terminated_string(substring)
-          Ok(#(s, rest))
-        }
-        _ -> Error(BodyParseError)
-      }
-    }),
-  )
-
-  // Some messing around to try to get past the null terminated strings
-  use smallest_bitarray_tuple <- result.try(
-    designation_tuples
-    |> list.map(fn(tup) { #(-bit_array.bit_size(tup.1), tup.1) })
-    |> list.max(fn(tupa, tupb) { int.compare(tupa.0, tupb.0) })
-    |> result.replace_error(BodyParseError),
-  )
-
-  let remain = smallest_bitarray_tuple.1
-
-  let designations = designation_tuples |> list.map(fn(tup) { tup.0 })
-
-  // Get leap second information
-  use leapsecond_integers, remain <- parse_list(
-    header.leapcnt,
-    remain,
-    [],
-    integer_parser(64),
-  )
-
-  let leapsecond_values = leapsecond_integers |> list.sized_chunk(2)
-
-  // Booleans to indicate if these are standard time or local time indicators
-  use standard_wall_indicators, remain <- parse_list(
-    header.ttisstdcnt,
-    remain,
-    [],
-    unsigned_integer_parser(8),
-  )
-
-  // Booleans to indicate if these are UT or local indicators
-  use ut_local_indicators, remain <- parse_list(
-    header.ttisutcnt,
-    remain,
-    [],
-    unsigned_integer_parser(8),
-  )
-
-  next(
-    TimeZoneFields(
-      transition_times,
-      ttinfo_indecies,
-      ttinfos,
-      designations,
-      leapsecond_values,
-      standard_wall_indicators,
-      ut_local_indicators,
-    ),
-    remain,
-  )
-}
-
-fn parse_list(
-  length: Int,
-  bits: BitArray,
-  acc: List(a),
-  parser: Parser(a, b),
-  next: fn(List(a), BitArray) -> Result(b, TimeZoneError),
-) {
-  case length {
-    0 -> next(list.reverse(acc), bits)
-    _ -> {
-      use result, remain <- parser(bits)
-      parse_list(length - 1, remain, [result, ..acc], parser, next)
-    }
-  }
-}
-
-fn parse_ttinfo(
-  bits: BitArray,
-  next: fn(TTInfo, BitArray) -> Result(a, TimeZoneError),
-) -> Result(a, TimeZoneError) {
-  use utoff, bits <- integer_parser(32)(bits)
-  use isdst, bits <- unsigned_integer_parser(8)(bits)
-  use desigidx, bits <- unsigned_integer_parser(8)(bits)
-
-  let ttinfo = TTInfo(utoff, isdst, desigidx)
-
-  next(ttinfo, bits)
-}
-
-fn integer_parser(
-  bit_size: Int,
-) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TimeZoneError)) ->
-  Result(a, TimeZoneError) {
-  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TimeZoneError)) {
-    case bits {
-      <<i:signed-int-big-size(bit_size), rest:bits>> -> next(i, rest)
-      _ -> Error(IntegerParseError)
-    }
-  }
-}
-
-fn unsigned_integer_parser(
-  bit_size: Int,
-) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TimeZoneError)) ->
-  Result(a, TimeZoneError) {
-  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TimeZoneError)) {
-    case bits {
-      <<i:unsigned-int-big-size(bit_size), rest:bits>> -> next(i, rest)
-      _ -> Error(IntegerParseError)
-    }
-  }
-}
-
-fn parse_null_terminated_string(
-  bits: BitArray,
-  next: fn(String, BitArray) -> Result(a, TimeZoneError),
-) -> Result(a, TimeZoneError) {
-  case split_at_null(bits, 0) {
-    Ok(#(prefix, postfix)) -> {
-      case bit_array.to_string(prefix) {
-        Ok(v) -> next(v, postfix)
-        Error(Nil) -> Error(BodyParseError)
-      }
-    }
-    Error(Nil) -> Error(BodyParseError)
-  }
-}
-
-fn split_at_null(
-  bits: BitArray,
-  start: Int,
-) -> Result(#(BitArray, BitArray), Nil) {
-  case bits {
-    <<a:bits-size(start), 0:int-size(8), b:bits>> -> Ok(#(a, b))
-    <<_:bits-size(start)>> -> Error(Nil)
-    _ -> split_at_null(bits, start + 8)
-  }
+  Ok(TimeInZone(dt, tm, slice_of_interest.designation, slice_of_interest.isdst))
 }
 
 // Turn time zone fields into a list of timezone information slices
-pub fn create_slices(fields: TimeZoneFields) -> List(TTSlice) {
+fn create_slices(fields: internal.TimeZoneFields) -> List(TTSlice) {
   let infos =
     list.zip(fields.ttinfos, fields.designations)
     |> list.index_map(fn(tup, idx) { #(idx, tup) })
@@ -406,7 +118,7 @@ pub fn create_slices(fields: TimeZoneFields) -> List(TTSlice) {
   |> result.values
 }
 
-pub fn default_slice(fields: TimeZoneFields) -> Result(TTSlice, Nil) {
+fn default_slice(fields: internal.TimeZoneFields) -> Result(TTSlice, Nil) {
   use ttinfo <- result.try(list.first(fields.ttinfos))
   use designation <- result.try(list.first(fields.designations))
   let isdst = case ttinfo.isdst {
@@ -415,29 +127,4 @@ pub fn default_slice(fields: TimeZoneFields) -> Result(TTSlice, Nil) {
   }
 
   Ok(TTSlice(0, duration.seconds(ttinfo.utoff), isdst, designation))
-}
-
-pub fn get_slice(
-  ts: timestamp.Timestamp,
-  slices: List(TTSlice),
-  default: Result(TTSlice, Nil),
-) -> Result(TTSlice, Nil) {
-  let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
-
-  slices
-  |> list.fold_until(default, fn(acc, slice) {
-    case slice.start_time < seconds {
-      True -> list.Continue(Ok(slice))
-      False -> list.Stop(acc)
-    }
-  })
-}
-
-pub fn tzfile_path(name: String) -> String {
-  let root = case envoy.get("ZONEINFO") {
-    Ok(dir) -> dir
-    _ -> "/usr/share/zoneinfo"
-  }
-
-  filepath.join(root, name)
 }
