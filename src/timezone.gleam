@@ -1,3 +1,21 @@
+//// This module is for working with time zones and converting timestamps
+//// from the `gleam/time` library into dates and times of day in a
+//// timezone.
+////
+//// This library makes use of the [IANA tz database](https://www.iana.org/time-zones)
+//// which is generally already installed on computers.
+//// This library will search for timezone data in the [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
+//// file format. These are generally located in the `/usr/share/zoneinfo`
+//// directory on posix systems, however if they are installed elsewhere the
+//// ZONEINFO environment variable can be set to the full path of the directory
+//// containing the tz database files.
+////
+//// Time zone identifiers are generally of the form "Continent/City" for example
+//// `America/New_York`, `Europe/Amsterdam`, or `Asia/Tokyo`. A list of time zone
+//// identifiers is in the [list of tz database time zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+//// article on Wikipedia. The time zone identifiers are passed to many of the
+//// functions of this library as the `zone_name` parameter.
+
 import envoy
 import filepath
 import gleam/dict
