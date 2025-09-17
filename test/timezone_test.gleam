@@ -1,5 +1,6 @@
 import gleam/bit_array
 import gleam/time/calendar
+import gleam/time/duration
 import gleam/time/timestamp
 import gleeunit
 import timezone
@@ -68,6 +69,7 @@ pub fn test_get_time_in_local_zone() {
     == Ok(timezone.TimeInZone(
       calendar.Date(2025, calendar.September, 17),
       calendar.TimeOfDay(1, 18, 0, 0),
+      duration.hours(-4),
       "EDT",
       True,
     ))
@@ -80,6 +82,7 @@ pub fn test_get_time_in_utc_zone() {
     == Ok(timezone.TimeInZone(
       calendar.Date(2025, calendar.September, 17),
       calendar.TimeOfDay(5, 18, 0, 0),
+      duration.hours(0),
       "UTC",
       False,
     ))
