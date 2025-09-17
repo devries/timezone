@@ -9,15 +9,11 @@
 > --- Louis Pilfold
 
 ```sh
-gleam add timezone@1
+gleam add timezone
 ```
-```gleam
-import timezone
 
-pub fn main() -> Nil {
-  // TODO: An example of the project in use
-}
-```
+A timezone library which uses your local ZONEINFO files to convert
+`timestamp.Timestamp` values into dates and times of day.
 
 Further documentation can be found at <https://hexdocs.pm/timezone>.
 

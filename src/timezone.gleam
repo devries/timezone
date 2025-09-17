@@ -17,7 +17,7 @@ pub type TimeZoneError {
 }
 
 /// Timezone definition slice
-pub type TTSlice {
+type TTSlice {
   TTSlice(start_time: Int, utoff: Duration, isdst: Bool, designation: String)
 }
 
@@ -26,25 +26,10 @@ pub type TimeInZone {
   TimeInZone(
     date: Date,
     time_of_day: TimeOfDay,
+    offset: duration.Duration,
     designation: String,
     is_dst: Bool,
   )
-}
-
-pub fn get_slice(
-  ts: timestamp.Timestamp,
-  slices: List(TTSlice),
-  default: Result(TTSlice, Nil),
-) -> Result(TTSlice, Nil) {
-  let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
-
-  slices
-  |> list.fold_until(default, fn(acc, slice) {
-    case slice.start_time < seconds {
-      True -> list.Continue(Ok(slice))
-      False -> list.Stop(acc)
-    }
-  })
 }
 
 /// Get the full path to the zoneinfo file for that
@@ -85,13 +70,50 @@ pub fn get_time_with_tzdata(
   )
 
   // Pull out the TTSlice representing the timezone at that timestamp
-  use slice_of_interest <- result.try(
+  use slice_of_interest <- result.map(
     get_slice(ts, create_slices(tz.fields), default_slice(tz.fields))
     |> result.replace_error(TimeSliceError),
   )
   let #(dt, tm) = timestamp.to_calendar(ts, slice_of_interest.utoff)
 
-  Ok(TimeInZone(dt, tm, slice_of_interest.designation, slice_of_interest.isdst))
+  TimeInZone(
+    dt,
+    tm,
+    slice_of_interest.utoff,
+    slice_of_interest.designation,
+    slice_of_interest.isdst,
+  )
+}
+
+/// Convert a timestamp to a calendar date and time of day for a
+/// given time zone.
+pub fn to_calendar(
+  ts: Timestamp,
+  zone_name: String,
+) -> Result(#(calendar.Date, calendar.TimeOfDay), TimeZoneError) {
+  use time_in_zone <- result.map(get_time_in_zone(ts, zone_name))
+
+  #(time_in_zone.date, time_in_zone.time_of_day)
+}
+
+/// Get the offset for a time zone at a particular moment in time.
+pub fn zone_offset(
+  ts: Timestamp,
+  zone_name: String,
+) -> Result(duration.Duration, TimeZoneError) {
+  use time_in_zone <- result.map(get_time_in_zone(ts, zone_name))
+
+  time_in_zone.offset
+}
+
+/// Get zone designation (e.g. "EST", "CEST", "JST").
+pub fn zone_designation(
+  ts: Timestamp,
+  zone_name: String,
+) -> Result(String, TimeZoneError) {
+  use time_in_zone <- result.map(get_time_in_zone(ts, zone_name))
+
+  time_in_zone.designation
 }
 
 // Turn time zone fields into a list of timezone information slices
@@ -127,4 +149,20 @@ fn default_slice(fields: internal.TimeZoneFields) -> Result(TTSlice, Nil) {
   }
 
   Ok(TTSlice(0, duration.seconds(ttinfo.utoff), isdst, designation))
+}
+
+fn get_slice(
+  ts: timestamp.Timestamp,
+  slices: List(TTSlice),
+  default: Result(TTSlice, Nil),
+) -> Result(TTSlice, Nil) {
+  let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
+
+  slices
+  |> list.fold_until(default, fn(acc, slice) {
+    case slice.start_time < seconds {
+      True -> list.Continue(Ok(slice))
+      False -> list.Stop(acc)
+    }
+  })
 }
