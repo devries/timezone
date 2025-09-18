@@ -6,19 +6,21 @@ import gleam/string
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp
 import simplifile
-import timezone/internal
+import timezone/tzparser
 
 pub opaque type TzDatabase {
   TzDatabase(
     zone_names: List(String),
-    zone_data: dict.Dict(String, internal.TimeZoneData),
+    zone_data: dict.Dict(String, tzparser.TZFile),
   )
 }
 
+/// Load timezone database from default operating system location
 pub fn load_from_os() {
   load_from_path("/usr/share/zoneinfo")
 }
 
+/// Load timezone database from provided directory
 pub fn load_from_path(path: String) {
   let parts = filepath.split(path)
   let drop_number = list.length(parts)
@@ -38,7 +40,7 @@ pub fn load_from_path(path: String) {
 fn process_tzfile(
   filename: String,
   components_to_drop: Int,
-) -> Result(#(String, internal.TimeZoneData), Nil) {
+) -> Result(#(String, tzparser.TZFile), Nil) {
   let zone_name =
     filepath.split(filename)
     |> list.drop(components_to_drop)
@@ -49,16 +51,21 @@ fn process_tzfile(
   )
 
   use timeinfo <- result.try(
-    internal.parse(tzdata) |> result.replace_error(Nil),
+    tzparser.parse(tzdata) |> result.replace_error(Nil),
   )
 
   Ok(#(zone_name, timeinfo))
 }
 
+/// Get all timezones in the database
 pub fn get_available_timezones(db: TzDatabase) -> List(String) {
   db.zone_names
 }
 
+/// Time zone parameters record.
+/// - `offset` is the offset from UTC.
+/// - `is_dst` indicates if it is daylight savings time
+/// - `designation` is the time zone designation
 pub type ZoneParameters {
   ZoneParameters(offset: Duration, is_dst: Bool, designation: String)
 }
@@ -86,7 +93,7 @@ type TTSlice {
 }
 
 // Turn time zone fields into a list of timezone information slices
-fn create_slices(fields: internal.TimeZoneFields) -> List(TTSlice) {
+fn create_slices(fields: tzparser.TZFileFields) -> List(TTSlice) {
   let infos =
     list.zip(fields.ttinfos, fields.designations)
     |> list.index_map(fn(tup, idx) { #(idx, tup) })
@@ -109,7 +116,7 @@ fn create_slices(fields: internal.TimeZoneFields) -> List(TTSlice) {
   |> result.values
 }
 
-fn default_slice(fields: internal.TimeZoneFields) -> Result(TTSlice, Nil) {
+fn default_slice(fields: tzparser.TZFileFields) -> Result(TTSlice, Nil) {
   use ttinfo <- result.try(list.first(fields.ttinfos))
   use designation <- result.try(list.first(fields.designations))
   let isdst = case ttinfo.isdst {

@@ -3,9 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/result
 
-// import timezone.{type TimeZoneError}
-
-pub type InternalTimeZoneError {
+pub type TZFileError {
   HeaderParseError
   HeaderVersionError
   BodyParseError
@@ -13,8 +11,8 @@ pub type InternalTimeZoneError {
   ZoneFileError
 }
 
-pub type TimeZoneHeader {
-  TimeZoneHeader(
+pub type TZFileHeader {
+  TZFileHeader(
     version: Int,
     ttisutcnt: Int,
     ttisstdcnt: Int,
@@ -25,8 +23,8 @@ pub type TimeZoneHeader {
   )
 }
 
-pub type TimeZoneFields {
-  TimeZoneFields(
+pub type TZFileFields {
+  TZFileFields(
     transition_times: List(Int),
     time_types: List(Int),
     ttinfos: List(TTInfo),
@@ -37,12 +35,8 @@ pub type TimeZoneFields {
   )
 }
 
-pub type TimeZoneData {
-  TimeZoneData(
-    header: TimeZoneHeader,
-    fields: TimeZoneFields,
-    remains: BitArray,
-  )
+pub type TZFile {
+  TZFile(header: TZFileHeader, fields: TZFileFields, remains: BitArray)
 }
 
 pub type TTInfo {
@@ -50,10 +44,10 @@ pub type TTInfo {
 }
 
 type Parser(a, b) =
-  fn(BitArray, fn(a, BitArray) -> Result(b, InternalTimeZoneError)) ->
-    Result(b, InternalTimeZoneError)
+  fn(BitArray, fn(a, BitArray) -> Result(b, TZFileError)) ->
+    Result(b, TZFileError)
 
-pub fn parse(tzdata: BitArray) -> Result(TimeZoneData, InternalTimeZoneError) {
+pub fn parse(tzdata: BitArray) -> Result(TZFile, TZFileError) {
   // Parse the header for the tzfile
   use header, fields <- parse_header(tzdata)
 
@@ -64,16 +58,16 @@ pub fn parse(tzdata: BitArray) -> Result(TimeZoneData, InternalTimeZoneError) {
     2 -> {
       use revised_header, remain <- parse_header(remain)
       use revised_section, remain <- parse_section(revised_header, 64, remain)
-      Ok(TimeZoneData(revised_header, revised_section, remain))
+      Ok(TZFile(revised_header, revised_section, remain))
     }
-    _ -> Ok(TimeZoneData(header, first_section, remain))
+    _ -> Ok(TZFile(header, first_section, remain))
   }
 }
 
 pub fn parse_header(
   tzdata: BitArray,
-  next: fn(TimeZoneHeader, BitArray) -> Result(a, InternalTimeZoneError),
-) -> Result(a, InternalTimeZoneError) {
+  next: fn(TZFileHeader, BitArray) -> Result(a, TZFileError),
+) -> Result(a, TZFileError) {
   case tzdata {
     <<
       "TZif":utf8,
@@ -95,7 +89,7 @@ pub fn parse_header(
         _ -> Error(HeaderVersionError)
       })
       let header =
-        TimeZoneHeader(
+        TZFileHeader(
           parsed_version,
           ttisutcnt,
           ttisstdcnt,
@@ -112,11 +106,11 @@ pub fn parse_header(
 }
 
 fn parse_section(
-  header: TimeZoneHeader,
+  header: TZFileHeader,
   integer_size: Int,
   fields: BitArray,
-  next: fn(TimeZoneFields, BitArray) -> Result(a, InternalTimeZoneError),
-) -> Result(a, InternalTimeZoneError) {
+  next: fn(TZFileFields, BitArray) -> Result(a, TZFileError),
+) -> Result(a, TZFileError) {
   // Get list of time zone transition times
   use transition_times, remain <- parse_list(
     header.timecnt,
@@ -189,7 +183,7 @@ fn parse_section(
   )
 
   next(
-    TimeZoneFields(
+    TZFileFields(
       transition_times,
       ttinfo_indecies,
       ttinfos,
@@ -207,7 +201,7 @@ fn parse_list(
   bits: BitArray,
   acc: List(a),
   parser: Parser(a, b),
-  next: fn(List(a), BitArray) -> Result(b, InternalTimeZoneError),
+  next: fn(List(a), BitArray) -> Result(b, TZFileError),
 ) {
   case length {
     0 -> next(list.reverse(acc), bits)
@@ -220,8 +214,8 @@ fn parse_list(
 
 pub fn parse_ttinfo(
   bits: BitArray,
-  next: fn(TTInfo, BitArray) -> Result(a, InternalTimeZoneError),
-) -> Result(a, InternalTimeZoneError) {
+  next: fn(TTInfo, BitArray) -> Result(a, TZFileError),
+) -> Result(a, TZFileError) {
   use utoff, bits <- integer_parser(32)(bits)
   use isdst, bits <- unsigned_integer_parser(8)(bits)
   use desigidx, bits <- unsigned_integer_parser(8)(bits)
@@ -233,12 +227,9 @@ pub fn parse_ttinfo(
 
 fn integer_parser(
   bit_size: Int,
-) -> fn(BitArray, fn(Int, BitArray) -> Result(a, InternalTimeZoneError)) ->
-  Result(a, InternalTimeZoneError) {
-  fn(
-    bits: BitArray,
-    next: fn(Int, BitArray) -> Result(a, InternalTimeZoneError),
-  ) {
+) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TZFileError)) ->
+  Result(a, TZFileError) {
+  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TZFileError)) {
     case bits {
       <<i:signed-int-big-size(bit_size), rest:bits>> -> next(i, rest)
       _ -> Error(IntegerParseError)
@@ -248,12 +239,9 @@ fn integer_parser(
 
 fn unsigned_integer_parser(
   bit_size: Int,
-) -> fn(BitArray, fn(Int, BitArray) -> Result(a, InternalTimeZoneError)) ->
-  Result(a, InternalTimeZoneError) {
-  fn(
-    bits: BitArray,
-    next: fn(Int, BitArray) -> Result(a, InternalTimeZoneError),
-  ) {
+) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TZFileError)) ->
+  Result(a, TZFileError) {
+  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TZFileError)) {
     case bits {
       <<i:unsigned-int-big-size(bit_size), rest:bits>> -> next(i, rest)
       _ -> Error(IntegerParseError)
@@ -263,8 +251,8 @@ fn unsigned_integer_parser(
 
 pub fn parse_null_terminated_string(
   bits: BitArray,
-  next: fn(String, BitArray) -> Result(a, InternalTimeZoneError),
-) -> Result(a, InternalTimeZoneError) {
+  next: fn(String, BitArray) -> Result(a, TZFileError),
+) -> Result(a, TZFileError) {
   case split_at_null(bits, 0) {
     Ok(#(prefix, postfix)) -> {
       case bit_array.to_string(prefix) {
