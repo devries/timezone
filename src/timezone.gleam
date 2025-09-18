@@ -25,6 +25,7 @@ import gleam/time/calendar.{type Date, type TimeOfDay}
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp.{type Timestamp}
 import simplifile
+import timezone/database
 import timezone/internal
 
 /// Time Zone error type
@@ -100,6 +101,28 @@ pub fn get_time_with_tzdata(
     slice_of_interest.utoff,
     slice_of_interest.designation,
     slice_of_interest.isdst,
+  )
+}
+
+/// Potentially new API for time_in_zone
+pub fn get_time_in_zone_tzdb(
+  ts: Timestamp,
+  zone_name: String,
+  db: database.TzDatabase,
+) -> Result(TimeInZone, TimeZoneError) {
+  use zone_parameters <- result.map(
+    database.get_zone_parameters(ts, zone_name, db)
+    |> result.replace_error(ParseError),
+  )
+
+  let #(dt, tm) = timestamp.to_calendar(ts, zone_parameters.offset)
+
+  TimeInZone(
+    dt,
+    tm,
+    zone_parameters.offset,
+    zone_parameters.designation,
+    zone_parameters.is_dst,
   )
 }
 
