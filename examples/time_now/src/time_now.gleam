@@ -17,12 +17,12 @@ pub fn main() {
 
 fn print_all_times(
   now: timestamp.Timestamp,
-) -> Result(Nil, timezone.TimeZoneError) {
+) -> Result(Nil, database.TzDatabaseError) {
   let db = database.load_from_os()
 
   database.get_available_timezones(db)
   |> list.map(fn(zone_name) {
-    case timezone.get_time_in_zone_tzdb(now, zone_name, db) {
+    case timezone.get_time_in_zone(now, zone_name, db) {
       Ok(tiz) ->
         io.println(
           string.pad_end(zone_name <> ":", 40, " ") <> format_time(tiz),

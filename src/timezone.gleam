@@ -20,20 +20,7 @@ import gleam/result
 import gleam/time/calendar.{type Date, type TimeOfDay}
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp.{type Timestamp}
-import timezone/database
-
-/// Time Zone error type
-/// This needs review and change as we split things up
-pub type TimeZoneError {
-  /// Error parsing timezone data
-  ParseError
-
-  /// Error constructing time zone transition table.
-  TimeSliceError
-
-  /// Other error in the Zone file
-  ZoneFileError
-}
+import timezone/database.{type TzDatabase, type TzDatabaseError}
 
 /// Representation of time in a time zone
 pub type TimeInZone {
@@ -46,16 +33,39 @@ pub type TimeInZone {
   )
 }
 
-/// Potentially new API for time_in_zone
-pub fn get_time_in_zone_tzdb(
+/// Given a timestamp, IANA time zone name, and a `TzDatabase` record,
+/// get the data and time of the timestamp along with information about
+/// the timezone, such as its offset from UTC, designation, and if it
+/// is daylight savings time in that zone.
+///
+/// # Example
+///
+/// ```gleam
+/// import gleam/time/timestamp
+/// import timezone/database
+///
+/// let ts = timestamp.from_unix_seconds(1_758_223_300)
+/// let db = database.load_from_os()
+/// 
+/// get_time_in_zone(ts, "America/New_York", db)
+/// // Ok(TimeInZone(
+/// //   Date(2025, September, 18),
+/// //   TimeOfDay(15, 21, 40, 0),
+/// //   Duration(-14_400, 0),
+/// //   "EDT",
+/// //   True,
+/// // ))
+/// ```
+pub fn get_time_in_zone(
   ts: Timestamp,
   zone_name: String,
-  db: database.TzDatabase,
-) -> Result(TimeInZone, TimeZoneError) {
-  use zone_parameters <- result.map(
-    database.get_zone_parameters(ts, zone_name, db)
-    |> result.replace_error(ParseError),
-  )
+  db: TzDatabase,
+) -> Result(TimeInZone, TzDatabaseError) {
+  use zone_parameters <- result.map(database.get_zone_parameters(
+    ts,
+    zone_name,
+    db,
+  ))
 
   let #(dt, tm) = timestamp.to_calendar(ts, zone_parameters.offset)
 

@@ -1,5 +1,5 @@
 name = "timezone"
-version = "0.1.0"
+version = "0.2.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
@@ -17,7 +17,6 @@ gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 gleam_time = ">= 1.4.0 and < 2.0.0"
 simplifile = ">= 2.3.0 and < 3.0.0"
 filepath = ">= 1.1.2 and < 2.0.0"
-envoy = ">= 1.0.2 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

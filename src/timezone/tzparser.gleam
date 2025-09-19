@@ -1,18 +1,35 @@
+//// Parser for [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
+//// formatted files. This parser can parse the header and initial data section for
+//// all tzfile formatted files as well as the header and data section of version 2
+//// format tzfiles. Versions 3 format and version 4 format extensions are not supported
+//// by this parser right now.
+
 import gleam/bit_array
 import gleam/int
 import gleam/list
 import gleam/result
 
-pub type TZFileError {
+/// Time zone parser error
+pub type TzFileError {
+  /// Error parsing header
   HeaderParseError
+
+  /// Unexpected file format version
   HeaderVersionError
+
+  /// Error parsing fields within body of file
   BodyParseError
+
+  /// Error parsing an integer
   IntegerParseError
-  ZoneFileError
 }
 
-pub type TZFileHeader {
-  TZFileHeader(
+/// Header of the tzfile. This uses the same label names as
+/// the extensions of the `tzh_` integer variables
+/// defined in the [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.htmlc)
+/// man page.
+pub type TzFileHeader {
+  TzFileHeader(
     version: Int,
     ttisutcnt: Int,
     ttisstdcnt: Int,
@@ -23,11 +40,12 @@ pub type TZFileHeader {
   )
 }
 
-pub type TZFileFields {
-  TZFileFields(
+/// Fields within the tzfile.
+pub type TzFileFields {
+  TzFileFields(
     transition_times: List(Int),
     time_types: List(Int),
-    ttinfos: List(TTInfo),
+    ttinfos: List(TtInfo),
     designations: List(String),
     leapsecond_values: List(List(Int)),
     standard_or_wall: List(Int),
@@ -35,19 +53,28 @@ pub type TZFileFields {
   )
 }
 
-pub type TZFile {
-  TZFile(header: TZFileHeader, fields: TZFileFields, remains: BitArray)
+/// Parsed tzfile record containing the header, fields, as well as
+/// any remaining data after the fields. The remaining data is usually
+/// an ASCII string starting with a newline.
+pub type TzFile {
+  TzFile(header: TzFileHeader, fields: TzFileFields, remains: BitArray)
 }
 
-pub type TTInfo {
-  TTInfo(utoff: Int, isdst: Int, desigidx: Int)
+/// This record represents the ttinfo structs as defined within the
+/// [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html) format
+/// man page.
+pub type TtInfo {
+  TtInfo(utoff: Int, isdst: Int, desigidx: Int)
 }
 
 type Parser(a, b) =
-  fn(BitArray, fn(a, BitArray) -> Result(b, TZFileError)) ->
-    Result(b, TZFileError)
+  fn(BitArray, fn(a, BitArray) -> Result(b, TzFileError)) ->
+    Result(b, TzFileError)
 
-pub fn parse(tzdata: BitArray) -> Result(TZFile, TZFileError) {
+/// Parse a bitarray in the format described by the
+/// [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html) man
+/// page.
+pub fn parse(tzdata: BitArray) -> Result(TzFile, TzFileError) {
   // Parse the header for the tzfile
   use header, fields <- parse_header(tzdata)
 
@@ -55,19 +82,19 @@ pub fn parse(tzdata: BitArray) -> Result(TZFile, TZFileError) {
   use first_section, remain <- parse_section(header, 32, fields)
 
   case header.version {
-    2 -> {
+    2 | 3 | 4 -> {
       use revised_header, remain <- parse_header(remain)
       use revised_section, remain <- parse_section(revised_header, 64, remain)
-      Ok(TZFile(revised_header, revised_section, remain))
+      Ok(TzFile(revised_header, revised_section, remain))
     }
-    _ -> Ok(TZFile(header, first_section, remain))
+    _ -> Ok(TzFile(header, first_section, remain))
   }
 }
 
-pub fn parse_header(
+fn parse_header(
   tzdata: BitArray,
-  next: fn(TZFileHeader, BitArray) -> Result(a, TZFileError),
-) -> Result(a, TZFileError) {
+  next: fn(TzFileHeader, BitArray) -> Result(a, TzFileError),
+) -> Result(a, TzFileError) {
   case tzdata {
     <<
       "TZif":utf8,
@@ -89,7 +116,7 @@ pub fn parse_header(
         _ -> Error(HeaderVersionError)
       })
       let header =
-        TZFileHeader(
+        TzFileHeader(
           parsed_version,
           ttisutcnt,
           ttisstdcnt,
@@ -106,11 +133,11 @@ pub fn parse_header(
 }
 
 fn parse_section(
-  header: TZFileHeader,
+  header: TzFileHeader,
   integer_size: Int,
   fields: BitArray,
-  next: fn(TZFileFields, BitArray) -> Result(a, TZFileError),
-) -> Result(a, TZFileError) {
+  next: fn(TzFileFields, BitArray) -> Result(a, TzFileError),
+) -> Result(a, TzFileError) {
   // Get list of time zone transition times
   use transition_times, remain <- parse_list(
     header.timecnt,
@@ -183,7 +210,7 @@ fn parse_section(
   )
 
   next(
-    TZFileFields(
+    TzFileFields(
       transition_times,
       ttinfo_indecies,
       ttinfos,
@@ -201,7 +228,7 @@ fn parse_list(
   bits: BitArray,
   acc: List(a),
   parser: Parser(a, b),
-  next: fn(List(a), BitArray) -> Result(b, TZFileError),
+  next: fn(List(a), BitArray) -> Result(b, TzFileError),
 ) {
   case length {
     0 -> next(list.reverse(acc), bits)
@@ -212,24 +239,24 @@ fn parse_list(
   }
 }
 
-pub fn parse_ttinfo(
+fn parse_ttinfo(
   bits: BitArray,
-  next: fn(TTInfo, BitArray) -> Result(a, TZFileError),
-) -> Result(a, TZFileError) {
+  next: fn(TtInfo, BitArray) -> Result(a, TzFileError),
+) -> Result(a, TzFileError) {
   use utoff, bits <- integer_parser(32)(bits)
   use isdst, bits <- unsigned_integer_parser(8)(bits)
   use desigidx, bits <- unsigned_integer_parser(8)(bits)
 
-  let ttinfo = TTInfo(utoff, isdst, desigidx)
+  let ttinfo = TtInfo(utoff, isdst, desigidx)
 
   next(ttinfo, bits)
 }
 
 fn integer_parser(
   bit_size: Int,
-) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TZFileError)) ->
-  Result(a, TZFileError) {
-  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TZFileError)) {
+) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TzFileError)) ->
+  Result(a, TzFileError) {
+  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TzFileError)) {
     case bits {
       <<i:signed-int-big-size(bit_size), rest:bits>> -> next(i, rest)
       _ -> Error(IntegerParseError)
@@ -239,9 +266,9 @@ fn integer_parser(
 
 fn unsigned_integer_parser(
   bit_size: Int,
-) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TZFileError)) ->
-  Result(a, TZFileError) {
-  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TZFileError)) {
+) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TzFileError)) ->
+  Result(a, TzFileError) {
+  fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TzFileError)) {
     case bits {
       <<i:unsigned-int-big-size(bit_size), rest:bits>> -> next(i, rest)
       _ -> Error(IntegerParseError)
@@ -249,10 +276,10 @@ fn unsigned_integer_parser(
   }
 }
 
-pub fn parse_null_terminated_string(
+fn parse_null_terminated_string(
   bits: BitArray,
-  next: fn(String, BitArray) -> Result(a, TZFileError),
-) -> Result(a, TZFileError) {
+  next: fn(String, BitArray) -> Result(a, TzFileError),
+) -> Result(a, TzFileError) {
   case split_at_null(bits, 0) {
     Ok(#(prefix, postfix)) -> {
       case bit_array.to_string(prefix) {
@@ -264,7 +291,7 @@ pub fn parse_null_terminated_string(
   }
 }
 
-pub fn split_at_null(
+fn split_at_null(
   bits: BitArray,
   start: Int,
 ) -> Result(#(BitArray, BitArray), Nil) {

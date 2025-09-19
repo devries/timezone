@@ -11,11 +11,21 @@ import timezone/tzparser
 pub opaque type TzDatabase {
   TzDatabase(
     zone_names: List(String),
-    zone_data: dict.Dict(String, tzparser.TZFile),
+    zone_data: dict.Dict(String, tzparser.TzFile),
   )
 }
 
+/// TzDatabase error types
+pub type TzDatabaseError {
+  /// There is no information available for this zone.
+  ZoneNotFound
+  /// Unable to provide zone information due to missing or
+  /// incomplete data.
+  ProcessingError
+}
+
 /// Load timezone database from default operating system location
+/// which is typically "/usr/share/zoneinfo".
 pub fn load_from_os() {
   load_from_path("/usr/share/zoneinfo")
 }
@@ -37,10 +47,28 @@ pub fn load_from_path(path: String) {
   )
 }
 
+/// Create new empty TzDatabase.
+pub fn new() -> TzDatabase {
+  TzDatabase([], dict.new())
+}
+
+/// Add new timezone definition to TzDatabase.
+pub fn add_tzfile(
+  db: TzDatabase,
+  zone_name: String,
+  tzfile: tzparser.TzFile,
+) -> TzDatabase {
+  let namelist = case dict.has_key(db.zone_data, zone_name) {
+    True -> db.zone_names
+    False -> [zone_name, ..db.zone_names] |> list.sort(string.compare)
+  }
+  TzDatabase(namelist, dict.insert(db.zone_data, zone_name, tzfile))
+}
+
 fn process_tzfile(
   filename: String,
   components_to_drop: Int,
-) -> Result(#(String, tzparser.TZFile), Nil) {
+) -> Result(#(String, tzparser.TzFile), Nil) {
   let zone_name =
     filepath.split(filename)
     |> list.drop(components_to_drop)
@@ -49,7 +77,6 @@ fn process_tzfile(
   use tzdata <- result.try(
     simplifile.read_bits(filename) |> result.replace_error(Nil),
   )
-
   use timeinfo <- result.try(
     tzparser.parse(tzdata) |> result.replace_error(Nil),
   )
@@ -70,17 +97,45 @@ pub type ZoneParameters {
   ZoneParameters(offset: Duration, is_dst: Bool, designation: String)
 }
 
+/// Retrieve the time zone parameters for a zone at a particular time.
+/// The time is given as a `gleam/time/timestamp.Timestamp`, the zone name
+/// and a time zone database. Because of
+/// daylight savings time as well as other historical shifts in how time
+/// has been measured, time zone information for a location shifts over time,
+/// therefore the offset or designation you get from the database is time
+/// dependant. Do not assume that the time zone parameters will be the same
+/// at any other time.
+///
+/// # Example
+///
+/// ```gleam
+/// import gleam/time/timestamp
+/// 
+/// let ts = timestamp.from_unix_seconds(1_758_223_300)
+/// let db = database.load_from_os()
+/// 
+/// get_zone_parameters(ts, "America/New_York", db)
+/// // Ok(ZoneParameters(
+/// //   Duration(-144_40, 0),
+/// //   True,
+/// //   "EDT",
+/// // ))
+/// ```
 pub fn get_zone_parameters(
   ts: timestamp.Timestamp,
   zone_name: String,
   db: TzDatabase,
-) -> Result(ZoneParameters, Nil) {
-  use tzdata <- result.try(dict.get(db.zone_data, zone_name))
+) -> Result(ZoneParameters, TzDatabaseError) {
+  use tzdata <- result.try(
+    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNotFound),
+  )
   let default = default_slice(tzdata.fields)
 
   let slices = create_slices(tzdata.fields)
 
-  use slice <- result.try(get_slice(ts, slices, default))
+  use slice <- result.try(
+    get_slice(ts, slices, default) |> result.replace_error(ProcessingError),
+  )
 
   Ok(ZoneParameters(slice.utoff, slice.isdst, slice.designation))
 }
@@ -88,12 +143,12 @@ pub fn get_zone_parameters(
 // Below are some things I previously had elsewhere
 
 /// Timezone definition slice
-type TTSlice {
-  TTSlice(start_time: Int, utoff: Duration, isdst: Bool, designation: String)
+type TtSlice {
+  TtSlice(start_time: Int, utoff: Duration, isdst: Bool, designation: String)
 }
 
 // Turn time zone fields into a list of timezone information slices
-fn create_slices(fields: tzparser.TZFileFields) -> List(TTSlice) {
+fn create_slices(fields: tzparser.TzFileFields) -> List(TtSlice) {
   let infos =
     list.zip(fields.ttinfos, fields.designations)
     |> list.index_map(fn(tup, idx) { #(idx, tup) })
@@ -108,7 +163,7 @@ fn create_slices(fields: tzparser.TZFileFields) -> List(TTSlice) {
           0 -> False
           _ -> True
         }
-        Ok(TTSlice(tup.0, duration.seconds(ttinfo.utoff), isdst, designation))
+        Ok(TtSlice(tup.0, duration.seconds(ttinfo.utoff), isdst, designation))
       }
       _ -> Error(Nil)
     }
@@ -116,7 +171,7 @@ fn create_slices(fields: tzparser.TZFileFields) -> List(TTSlice) {
   |> result.values
 }
 
-fn default_slice(fields: tzparser.TZFileFields) -> Result(TTSlice, Nil) {
+fn default_slice(fields: tzparser.TzFileFields) -> Result(TtSlice, Nil) {
   use ttinfo <- result.try(list.first(fields.ttinfos))
   use designation <- result.try(list.first(fields.designations))
   let isdst = case ttinfo.isdst {
@@ -124,14 +179,14 @@ fn default_slice(fields: tzparser.TZFileFields) -> Result(TTSlice, Nil) {
     _ -> True
   }
 
-  Ok(TTSlice(0, duration.seconds(ttinfo.utoff), isdst, designation))
+  Ok(TtSlice(0, duration.seconds(ttinfo.utoff), isdst, designation))
 }
 
 fn get_slice(
   ts: timestamp.Timestamp,
-  slices: List(TTSlice),
-  default: Result(TTSlice, Nil),
-) -> Result(TTSlice, Nil) {
+  slices: List(TtSlice),
+  default: Result(TtSlice, Nil),
+) -> Result(TtSlice, Nil) {
   let #(seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
 
   slices
