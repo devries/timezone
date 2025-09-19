@@ -5,6 +5,12 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/timezone/)
 -->
 
+This package can be used to load the timezone database from the standard location
+(`/usr/share/zoneinfo`) on MacOS and Linux computers. It includes a parser for
+the `tzfile` format, as well as a utility functions to convert a timestamp from
+the [gleam_time](https://hexdocs.pm/gleam_time/) library into a date and time
+of day in the given timezone.
+
 > We could really do with a timezone database package with a
 > fn(Timestamp, Zone) -> #(Date, TimeOfDay) function
 >
@@ -15,15 +21,17 @@ To use, add the following entry in your `gleam.toml` file dependencies:
 ```
 timezone = { git = "git@github.com:devries/timezone.git", ref = "main" }
 ```
+# Installing the zoneinfo data files
 
-A timezone library which uses your local ZONEINFO files to convert
-`timestamp.Timestamp` values into dates and times of day.
+## MacOS
+The files should be included in your operating system by default. Check the
+`/usr/share/zoneinfo` directory and see if they are present.
 
-Further documentation can be found at <https://hexdocs.pm/timezone>.
+## Ubuntu/Debian Linux Systems
 
-## Development
+## Alpine Linux Systems
 
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-```
+## Red Hat/Rocky/Alma Linux Systems
+
+## Windows
+At this time we have not tested the windows operating system.
