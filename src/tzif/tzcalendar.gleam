@@ -20,11 +20,11 @@ import gleam/result
 import gleam/time/calendar.{type Date, type TimeOfDay}
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp.{type Timestamp}
-import timezone/database.{type TzDatabase, type TzDatabaseError}
+import tzif/database.{type TzDatabase, type TzDatabaseError}
 
 /// Representation of time in a time zone
-pub type TimeInZone {
-  TimeInZone(
+pub type TimeAndZone {
+  TimeAndZone(
     date: Date,
     time_of_day: TimeOfDay,
     offset: Duration,
@@ -34,7 +34,7 @@ pub type TimeInZone {
 }
 
 /// Given a timestamp, IANA time zone name, and a `TzDatabase` record,
-/// get the data and time of the timestamp along with information about
+/// get the date and time of the timestamp along with information about
 /// the timezone, such as its offset from UTC, designation, and if it
 /// is daylight savings time in that zone.
 ///
@@ -42,12 +42,12 @@ pub type TimeInZone {
 ///
 /// ```gleam
 /// import gleam/time/timestamp
-/// import timezone/database
+/// import tzif/database
 ///
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
 /// let db = database.load_from_os()
 /// 
-/// get_time_in_zone(ts, "America/New_York", db)
+/// get_time_and_zone(ts, "America/New_York", db)
 /// // Ok(TimeInZone(
 /// //   Date(2025, September, 18),
 /// //   TimeOfDay(15, 21, 40, 0),
@@ -56,11 +56,11 @@ pub type TimeInZone {
 /// //   True,
 /// // ))
 /// ```
-pub fn get_time_in_zone(
+pub fn get_time_and_zone(
   ts: Timestamp,
   zone_name: String,
   db: TzDatabase,
-) -> Result(TimeInZone, TzDatabaseError) {
+) -> Result(TimeAndZone, TzDatabaseError) {
   use zone_parameters <- result.map(database.get_zone_parameters(
     ts,
     zone_name,
@@ -69,11 +69,39 @@ pub fn get_time_in_zone(
 
   let #(dt, tm) = timestamp.to_calendar(ts, zone_parameters.offset)
 
-  TimeInZone(
+  TimeAndZone(
     dt,
     tm,
     zone_parameters.offset,
     zone_parameters.designation,
     zone_parameters.is_dst,
   )
+}
+
+/// Given a timestamp, IANA time zone name, and a `TzDatabase` record,
+/// get the date and time of day as a tuple in the format of the
+/// `gleam/time/timestamp.to_calendar` function.
+/// 
+/// # Example
+///
+/// ```gleam
+/// import gleam/time/timestamp
+/// import tzif/database
+///
+/// let ts = timestamp.from_unix_seconds(1_758_223_300)
+/// let db = database.load_from_os()
+/// 
+/// to_calendar(ts, "America/New_York", db)
+/// // Ok(#(
+/// //   Date(2025, September, 18),
+/// //   TimeOfDay(15, 21, 40, 0),
+/// // ))
+pub fn to_calendar(
+  ts: Timestamp,
+  zone_name: String,
+  db: TzDatabase,
+) -> Result(#(calendar.Date, calendar.TimeOfDay), TzDatabaseError) {
+  use tiz <- result.map(get_time_and_zone(ts, zone_name, db))
+
+  #(tiz.date, tiz.time_of_day)
 }

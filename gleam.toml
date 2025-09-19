@@ -1,10 +1,10 @@
-name = "timezone"
+name = "tzif"
 version = "0.2.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
 #
-description = "Time zone utility library"
+description = "Time Zone Information File Utilities"
 licences = ["MIT"]
 repository = { type = "github", user = "devries", repo = "timezone" }
 # links = [{ title = "Website", href = "" }]

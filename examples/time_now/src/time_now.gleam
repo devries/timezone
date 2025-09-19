@@ -4,8 +4,8 @@ import gleam/list
 import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
-import timezone
-import timezone/database
+import tzif/database
+import tzif/tzcalendar
 
 pub fn main() {
   let now = timestamp.system_time()
@@ -22,7 +22,7 @@ fn print_all_times(
 
   database.get_available_timezones(db)
   |> list.map(fn(zone_name) {
-    case timezone.get_time_in_zone(now, zone_name, db) {
+    case tzcalendar.get_time_and_zone(now, zone_name, db) {
       Ok(tiz) ->
         io.println(
           string.pad_end(zone_name <> ":", 40, " ") <> format_time(tiz),
@@ -34,7 +34,7 @@ fn print_all_times(
   Ok(Nil)
 }
 
-fn format_time(tiz: timezone.TimeInZone) -> String {
+fn format_time(tiz: tzcalendar.TimeAndZone) -> String {
   int.to_string(tiz.date.year)
   <> "-"
   <> int.to_string(tiz.date.month |> calendar.month_to_int)

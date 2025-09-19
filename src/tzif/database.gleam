@@ -6,7 +6,7 @@ import gleam/string
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp
 import simplifile
-import timezone/tzparser
+import tzif/tzparser
 
 pub opaque type TzDatabase {
   TzDatabase(
