@@ -5,7 +5,8 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/timezone/)
 -->
 
-This package can be used to load the timezone database from the standard location
+Timezone support for Gleam time using the operating system's timezone database.
+This package loads the timezone database from the standard location
 (`/usr/share/zoneinfo`) on MacOS and Linux computers. It includes a parser for
 the Time Zone Information Format (TZif) or `tzfile` format, as well as utility
 functions to convert a timestamp from the
