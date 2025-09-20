@@ -6,6 +6,8 @@ const tzsample = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAGAAAABgAAAAAAAADsAAAABgAAABSAAA
 
 const tzsample2 = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAABVVEMAVFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAABVVEMAClVUQzAK"
 
+const right_utc_sample = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABsAAAABAAAAAQAAAARqQGQbAAAAAAAAAFVUQwAEslgAAAAAAQWk7AEAAAACB4YfggAAAAMJZ1MDAAAABAtIhoQAAAAFDSsLhQAAAAYPDD8GAAAABxDtcocAAAAIEs6mCAAAAAkVn8qJAAAACheA/goAAAALGWIxiwAAAAwdJeoMAAAADSHa5Q0AAAAOJZ6djgAAAA8nf9EPAAAAECpQ9ZAAAAARLDIpEQAAABIuE1ySAAAAEzDnJBMAAAAUM7hIlAAAABU2jBAVAAAAFkO3G5YAAAAXSVwHlwAAABhP75MYAAAAGVWTLZkAAAAaWGhGmgAAABtUWmlmMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGwAAAAEAAAABAAAABAAAAABqQGQbAAAAAAAAAFVUQwAAAAAABLJYAAAAAAEAAAAABaTsAQAAAAIAAAAAB4YfggAAAAMAAAAACWdTAwAAAAQAAAAAC0iGhAAAAAUAAAAADSsLhQAAAAYAAAAADww/BgAAAAcAAAAAEO1yhwAAAAgAAAAAEs6mCAAAAAkAAAAAFZ/KiQAAAAoAAAAAF4D+CgAAAAsAAAAAGWIxiwAAAAwAAAAAHSXqDAAAAA0AAAAAIdrlDQAAAA4AAAAAJZ6djgAAAA8AAAAAJ3/RDwAAABAAAAAAKlD1kAAAABEAAAAALDIpEQAAABIAAAAALhNckgAAABMAAAAAMOckEwAAABQAAAAAM7hIlAAAABUAAAAANowQFQAAABYAAAAAQ7cblgAAABcAAAAASVwHlwAAABgAAAAAT++TGAAAABkAAAAAVZMtmQAAABoAAAAAWGhGmgAAABsKCg=="
+
 fn get_ny_tzfile() -> BitArray {
   let assert Ok(data) = bit_array.base64_decode(tzsample)
   data
@@ -16,7 +18,12 @@ fn get_utc_tzfile() -> BitArray {
   data
 }
 
-pub fn first_header_test() {
+fn get_right_utc_tzfile() -> BitArray {
+  let assert Ok(data) = bit_array.base64_decode(right_utc_sample)
+  data
+}
+
+pub fn new_york_header_test() {
   let assert Ok(tzdata) =
     get_ny_tzfile()
     |> tzparser.parse
@@ -24,7 +31,7 @@ pub fn first_header_test() {
   assert tzdata.header == tzparser.TzFileHeader(2, 6, 6, 0, 236, 6, 20)
 }
 
-pub fn second_header_test() {
+pub fn utc_header_test() {
   let assert Ok(tzdata) =
     get_utc_tzfile()
     |> tzparser.parse
@@ -32,7 +39,15 @@ pub fn second_header_test() {
   assert tzdata.header == tzparser.TzFileHeader(2, 0, 0, 0, 0, 1, 4)
 }
 
-pub fn first_field_test() {
+pub fn right_utc_header_test() {
+  let assert Ok(tzdata) =
+    get_right_utc_tzfile()
+    |> tzparser.parse
+
+  assert tzdata.header == tzparser.TzFileHeader(2, 0, 0, 27, 1, 1, 4)
+}
+
+pub fn new_york_field_test() {
   let assert Ok(tzdata) =
     get_ny_tzfile()
     |> tzparser.parse
@@ -55,7 +70,7 @@ pub fn first_field_test() {
   assert tzdata.fields.ut_or_local == [0, 0, 0, 1, 0, 1]
 }
 
-pub fn second_field_test() {
+pub fn utc_field_test() {
   let assert Ok(tzdata) =
     get_utc_tzfile()
     |> tzparser.parse
@@ -68,6 +83,52 @@ pub fn second_field_test() {
     ]
   assert tzdata.fields.designations == ["UTC"]
   assert tzdata.fields.leapsecond_values == []
+  assert tzdata.fields.standard_or_wall == []
+  assert tzdata.fields.ut_or_local == []
+}
+
+pub fn right_utc_field_test() {
+  let assert Ok(tzdata) =
+    get_right_utc_tzfile()
+    |> tzparser.parse
+
+  assert tzdata.fields.transition_times == [1_782_604_827]
+  assert tzdata.fields.time_types == [0]
+  assert tzdata.fields.ttinfos
+    == [
+      tzparser.TtInfo(0, 0, 0),
+    ]
+  assert tzdata.fields.designations == ["UTC"]
+  assert tzdata.fields.leapsecond_values
+    == [
+      #(78_796_800, 1),
+      #(94_694_401, 2),
+      #(126_230_402, 3),
+      #(157_766_403, 4),
+      #(189_302_404, 5),
+      #(220_924_805, 6),
+      #(252_460_806, 7),
+      #(283_996_807, 8),
+      #(315_532_808, 9),
+      #(362_793_609, 10),
+      #(394_329_610, 11),
+      #(425_865_611, 12),
+      #(489_024_012, 13),
+      #(567_993_613, 14),
+      #(631_152_014, 15),
+      #(662_688_015, 16),
+      #(709_948_816, 17),
+      #(741_484_817, 18),
+      #(773_020_818, 19),
+      #(820_454_419, 20),
+      #(867_715_220, 21),
+      #(915_148_821, 22),
+      #(1_136_073_622, 23),
+      #(1_230_768_023, 24),
+      #(1_341_100_824, 25),
+      #(1_435_708_825, 26),
+      #(1_483_228_826, 27),
+    ]
   assert tzdata.fields.standard_or_wall == []
   assert tzdata.fields.ut_or_local == []
 }

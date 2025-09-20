@@ -22,6 +22,9 @@ pub type TzFileError {
 
   /// Error parsing an integer
   IntegerParseError
+
+  /// Error Parsing leap second section
+  LeapSecondParseError
 }
 
 /// Header of the tzfile. This uses the same label names as
@@ -47,7 +50,7 @@ pub type TzFileFields {
     time_types: List(Int),
     ttinfos: List(TtInfo),
     designations: List(String),
-    leapsecond_values: List(List(Int)),
+    leapsecond_values: List(#(Int, Int)),
     standard_or_wall: List(Int),
     ut_or_local: List(Int),
   )
@@ -183,15 +186,12 @@ fn parse_section(
 
   let designations = designation_tuples |> list.map(fn(tup) { tup.0 })
 
-  // Get leap second information
-  use leapsecond_integers, remain <- parse_list(
+  use leapsecond_values, remain <- parse_list(
     header.leapcnt,
     remain,
     [],
-    integer_parser(integer_size),
+    leap_parser(integer_size),
   )
-
-  let leapsecond_values = leapsecond_integers |> list.sized_chunk(2)
 
   // Booleans to indicate if these are standard time or local time indicators
   use standard_wall_indicators, remain <- parse_list(
@@ -272,6 +272,22 @@ fn unsigned_integer_parser(
     case bits {
       <<i:unsigned-int-big-size(bit_size), rest:bits>> -> next(i, rest)
       _ -> Error(IntegerParseError)
+    }
+  }
+}
+
+fn leap_parser(
+  bit_size: Int,
+) -> fn(BitArray, fn(#(Int, Int), BitArray) -> Result(a, TzFileError)) ->
+  Result(a, TzFileError) {
+  fn(bits: BitArray, next: fn(#(Int, Int), BitArray) -> Result(a, TzFileError)) {
+    case bits {
+      <<
+        tt:signed-int-big-size(bit_size),
+        leap:signed-int-big-size(32),
+        rest:bits,
+      >> -> next(#(tt, leap), rest)
+      _ -> Error(LeapSecondParseError)
     }
   }
 }

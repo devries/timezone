@@ -8,6 +8,9 @@ import gleam/time/timestamp
 import simplifile
 import tzif/tzparser
 
+/// Time Zone Database record. This is typically created by
+/// loading from the operating system with the `load_from_os`
+/// function.
 pub opaque type TzDatabase {
   TzDatabase(
     zone_names: List(String),

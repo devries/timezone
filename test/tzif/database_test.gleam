@@ -1,4 +1,6 @@
 import gleam/bit_array
+import gleam/list
+import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import tzif/database
@@ -8,6 +10,8 @@ const tzsample = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAGAAAABgAAAAAAAADsAAAABgAAABSAAA
 
 const tzsample2 = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAABVVEMAVFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAABVVEMAClVUQzAK"
 
+const right_utc_sample = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABsAAAABAAAAAQAAAARqQGQbAAAAAAAAAFVUQwAEslgAAAAAAQWk7AEAAAACB4YfggAAAAMJZ1MDAAAABAtIhoQAAAAFDSsLhQAAAAYPDD8GAAAABxDtcocAAAAIEs6mCAAAAAkVn8qJAAAACheA/goAAAALGWIxiwAAAAwdJeoMAAAADSHa5Q0AAAAOJZ6djgAAAA8nf9EPAAAAECpQ9ZAAAAARLDIpEQAAABIuE1ySAAAAEzDnJBMAAAAUM7hIlAAAABU2jBAVAAAAFkO3G5YAAAAXSVwHlwAAABhP75MYAAAAGVWTLZkAAAAaWGhGmgAAABtUWmlmMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGwAAAAEAAAABAAAABAAAAABqQGQbAAAAAAAAAFVUQwAAAAAABLJYAAAAAAEAAAAABaTsAQAAAAIAAAAAB4YfggAAAAMAAAAACWdTAwAAAAQAAAAAC0iGhAAAAAUAAAAADSsLhQAAAAYAAAAADww/BgAAAAcAAAAAEO1yhwAAAAgAAAAAEs6mCAAAAAkAAAAAFZ/KiQAAAAoAAAAAF4D+CgAAAAsAAAAAGWIxiwAAAAwAAAAAHSXqDAAAAA0AAAAAIdrlDQAAAA4AAAAAJZ6djgAAAA8AAAAAJ3/RDwAAABAAAAAAKlD1kAAAABEAAAAALDIpEQAAABIAAAAALhNckgAAABMAAAAAMOckEwAAABQAAAAAM7hIlAAAABUAAAAANowQFQAAABYAAAAAQ7cblgAAABcAAAAASVwHlwAAABgAAAAAT++TGAAAABkAAAAAVZMtmQAAABoAAAAAWGhGmgAAABsKCg=="
+
 fn get_database() -> database.TzDatabase {
   let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
   let assert Ok(tz_ny) = tzparser.parse(tzdata)
@@ -15,14 +19,19 @@ fn get_database() -> database.TzDatabase {
   let assert Ok(tzdata2) = bit_array.base64_decode(tzsample2)
   let assert Ok(tz_utc) = tzparser.parse(tzdata2)
 
+  let assert Ok(tzdata3) = bit_array.base64_decode(right_utc_sample)
+  let assert Ok(tz_right_utc) = tzparser.parse(tzdata3)
+
   database.new()
   |> database.add_tzfile("America/New_York", tz_ny)
   |> database.add_tzfile("UTC", tz_utc)
+  |> database.add_tzfile("right/UTC", tz_right_utc)
 }
 
 pub fn zone_name_test() {
   let db = get_database()
-  assert database.get_available_timezones(db) == ["America/New_York", "UTC"]
+  assert database.get_available_timezones(db)
+    == ["America/New_York", "UTC", "right/UTC"]
 }
 
 pub fn nyc_dst_parameter_test() {
@@ -55,4 +64,51 @@ pub fn utc_st_parameter_test() {
 
   assert database.get_zone_parameters(ts, "UTC", db)
     == Ok(database.ZoneParameters(duration.hours(0), False, "UTC"))
+}
+
+pub fn right_utc_dst_parameter_test() {
+  let db = get_database()
+  let ts = timestamp.from_unix_seconds(1_758_080_000)
+
+  assert database.get_zone_parameters(ts, "right/UTC", db)
+    == Ok(database.ZoneParameters(duration.hours(0), False, "UTC"))
+}
+
+pub fn right_utc_st_parameter_test() {
+  let db = get_database()
+  let ts = timestamp.from_unix_seconds(95_490_000)
+
+  assert database.get_zone_parameters(ts, "right/UTC", db)
+    == Ok(database.ZoneParameters(duration.hours(0), False, "UTC"))
+}
+
+pub fn historical_nyc_test() {
+  let db = get_database()
+  let historical_zone_parameters =
+    [
+      // local meridian time (June 1, 1880)
+      -2_826_964_800,
+      // No Daylight Savings (June 1, 1900)
+      -2_132_827_200,
+      // US EDT (June 1, 1920) - Unusual start/stop times
+      -1_564_747_200,
+      // NYC War time EWT (January 1, 1945)
+      -788_875_200,
+      // US EDT (June 1, 1950)
+      -618_062_400,
+      // US EDT (June 1, 1970)
+      13_089_600,
+    ]
+    |> list.map(timestamp.from_unix_seconds)
+    |> list.map(database.get_zone_parameters(_, "America/New_York", db))
+
+  assert historical_zone_parameters
+    == [
+      Ok(database.ZoneParameters(duration.seconds(-17_762), False, "LMT")),
+      Ok(database.ZoneParameters(duration.seconds(-18_000), False, "EST")),
+      Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EDT")),
+      Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EWT")),
+      Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EDT")),
+      Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EDT")),
+    ]
 }

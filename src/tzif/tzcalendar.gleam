@@ -1,13 +1,13 @@
 //// This module is for working with time zones and converting timestamps
 //// from the `gleam/time` library into dates and times of day in a
-//// timezone.
+//// time zone.
 ////
 //// This library makes use of the [IANA tz database](https://www.iana.org/time-zones)
 //// which is generally already installed on computers.
-//// This library will search for timezone data in the [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
+//// This library will search for timezone data in the TZif or [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
 //// file format. These are generally located in the `/usr/share/zoneinfo`
 //// directory on posix systems, however if they are installed elsewhere the
-//// ZONEINFO environment variable can be set to the full path of the directory
+//// then they can be loaded ysung the full path of the directory
 //// containing the tz database files.
 ////
 //// Time zone identifiers are generally of the form "Continent/City" for example
@@ -22,7 +22,10 @@ import gleam/time/duration.{type Duration}
 import gleam/time/timestamp.{type Timestamp}
 import tzif/database.{type TzDatabase, type TzDatabaseError}
 
-/// Representation of time in a time zone
+/// Representation of a date and time of day in a particular time zone
+/// along with the offset from UTC, the zone designation (i.e. "UTC",
+/// "EST", "CEDT") and a boolean indicating if it is daylight savings
+/// time.
 pub type TimeAndZone {
   TimeAndZone(
     date: Date,

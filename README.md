@@ -1,17 +1,17 @@
-# timezone
+# tzif
 
 <!--#
 [![Package Version](https://img.shields.io/hexpm/v/timezone)](https://hex.pm/packages/timezone)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/timezone/)
 -->
 
-Timezone support for Gleam time using the operating system's timezone database.
-This package loads the timezone database from the standard location
+Time zone support for Gleam time using the IANA Time Zone Database.
+This package loads the time zone database from the standard location
 (`/usr/share/zoneinfo`) on MacOS and Linux computers. It includes a parser for
 the Time Zone Information Format (TZif) or `tzfile` format, as well as utility
 functions to convert a timestamp from the
 [gleam_time](https://hexdocs.pm/gleam_time/) library into a date and time
-of day in the given timezone.
+of day in the given time zone.
 
 > We could really do with a timezone database package with a
 > fn(Timestamp, Zone) -> #(Date, TimeOfDay) function
@@ -21,13 +21,61 @@ of day in the given timezone.
 To use, add the following entry in your `gleam.toml` file dependencies:
 
 ```
-timezone = { git = "git@github.com:devries/timezone.git", ref = "main" }
+tzif = { git = "git@github.com:devries/timezone.git", ref = "main" }
 ```
+
+# Using the Package
+The most straightforward use would be to load the database from the default
+location on the operating system, and then obtain a timestamp using the
+[gleam_time](https://hexdocs.pm/gleam_time/) package, and convert that timestamp
+into a time of day in a time zone using the IANA time zone name. An example
+of that is shown in the code below.
+
+```gleam
+import gleam/int
+import gleam/io
+import gleam/string
+import gleam/time/timestamp
+import tzif/database
+import tzif/tzcalendar
+
+pub fn main() {
+    let now = timestamp.system_time()
+
+    // Load the database from the operating system
+    let db = database.load_from_os()
+
+    case tzcalendar.get_time_and_zone(now, "America/New_York", db) {
+        Ok(time_and_zone) -> {
+            // Successfully converted time to the requested time zone
+            io.println(
+                int.to_string(time_and_zone.time_of_day.hours)
+                |> string.pad_start(2, "0")
+                <> ":"
+                <> int.to_string(time_and_zone.time_of_day.minutes)
+                |> string.pad_start(2, "0")
+                <> ":"
+                <> int.to_string(time_and_zone.time_of_day.seconds)
+                |> string.pad_start(2, "0")
+                <> " "
+                <> time_and_zone.designation
+            )
+        }
+        Error(database.ZoneNotFound) -> io.println("Time zone not found")
+        Error(database.ProcessingError) -> io.println("Error processing time zone conversion")
+    }
+}
+```
+If you are on windows and have installed the IANA Time Zone Database, or want
+to use a custom version you can use the `database.load_from_path` function
+instead of the `database.load_from_os` function to specify a path to your
+database files.
+
 # Installing the zoneinfo data files
-Timezone information is frequently updated, therefore it makes sense to use the
-package manager for your operating system to keep the timezone database up to
-date. All common unix variants have timezone database packages and install the
-timezone database files into the `/usr/share/zoneinfo` directory by default.
+Time zone information is frequently updated, therefore it makes sense to use the
+package manager for your operating system to keep the time zone database up to
+date. All common unix variants have time zone database packages and install the
+time zone database files into the `/usr/share/zoneinfo` directory by default.
 
 ## MacOS
 The files should be included in your operating system by default. Check the
@@ -42,7 +90,7 @@ sudo apt install tzdata
 ```
 
 ### Debian based docker containers
-Installing and configuring the timezone database on a Debian or Ubuntu based
+Installing and configuring the time zone database on a Debian or Ubuntu based
 docker container can be done by adding the following to your `Dockerfile`:
 
 ```
@@ -58,14 +106,14 @@ RUN apt-get update && \
 ```
 
 ## Alpine Linux Systems
-The Alpine Package Keeper can install the timezone database using the command:
+The Alpine Package Keeper can install the time zone database using the command:
 
 ```
 sudo apk add tzdata
 ```
 
 ### Alpine based docker containers
-Installing and configuring the timezone database on an Alpine based docker
+Installing and configuring the time zone database on an Alpine based docker
 container can be done by adding the following to your `Dockerfile`:
 
 ```
@@ -81,7 +129,7 @@ RUN apk add --no-cache tzdata && \
 ```
 
 ## Red Hat/Rocky/Alma Linux Systems
-You can use the YUM package manager or DNF to install the timezone database
+You can use the YUM package manager or DNF to install the time zone database
 on Red Hat variants. To use YUM run the command:
 
 ```
@@ -94,4 +142,7 @@ Similarly, using DNF:
 sudo dnf install tzdata
 ```
 ## Windows
-At this time we have not tested the windows operating system.
+Microsoft Windows has a different mechanism for handling time zones, however
+you can install the IANA Time Zone Database by [downloading the latest
+version](https://www.iana.org/time-zones) and compiling the zone files using
+[the directions in the repository](https://data.iana.org/time-zones/tz-link.html).
