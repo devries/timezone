@@ -1,6 +1,5 @@
 import gleam/bit_array
 import gleam/list
-import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import tzif/database
@@ -110,5 +109,55 @@ pub fn historical_nyc_test() {
       Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EWT")),
       Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EDT")),
       Ok(database.ZoneParameters(duration.seconds(-14_400), True, "EDT")),
+    ]
+}
+
+pub fn has_leap_second_test() {
+  let db = get_database()
+
+  assert database.has_leap_second_data("America/New_York", db) == Ok(False)
+  assert database.has_leap_second_data("UTC", db) == Ok(False)
+  assert database.has_leap_second_data("right/UTC", db) == Ok(True)
+  assert database.has_leap_second_data("Invalid", db)
+    == Error(database.ZoneNotFound)
+}
+
+pub fn leap_second_check() {
+  let db = get_database()
+
+  assert database.leap_seconds(timestamp.from_unix_seconds(0), "UTC", db)
+    == Error(database.ProcessingError)
+  assert database.leap_seconds(timestamp.from_unix_seconds(0), "Invalid", db)
+    == Error(database.ZoneNotFound)
+
+  let historical_leap_seconds =
+    [
+      // Prior to leap seconds (Jan 1, 1970)
+      0,
+      // After first leap second (July 1, 1972)
+      78_840_000,
+      // After second leap second (January 1, 1973)
+      94_737_600,
+      // After ten leap seconds (July 1, 1981)
+      362_836_800,
+      // After 15 leap seconds (January 1, 1990)
+      631_195_200,
+      // After 25 leap seconds (January 1, 2013)
+      1_357_041_600,
+      // After 27 leap seconds (January 1, 2025)
+      1_735_732_800,
+    ]
+    |> list.map(timestamp.from_unix_seconds)
+    |> list.map(database.leap_seconds(_, "right/UTC", db))
+
+  assert historical_leap_seconds
+    == [
+      Ok(0),
+      Ok(1),
+      Ok(2),
+      Ok(10),
+      Ok(15),
+      Ok(25),
+      Ok(27),
     ]
 }

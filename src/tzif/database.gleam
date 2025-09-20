@@ -10,7 +10,9 @@ import tzif/tzparser
 
 /// Time Zone Database record. This is typically created by
 /// loading from the operating system with the `load_from_os`
-/// function.
+/// function. This record stores all the data required to
+/// get time zone information using the functions in this
+/// package.
 pub opaque type TzDatabase {
   TzDatabase(
     zone_names: List(String),
@@ -27,13 +29,16 @@ pub type TzDatabaseError {
   ProcessingError
 }
 
-/// Load timezone database from default operating system location
+/// Load time zone database from default operating system location
 /// which is typically "/usr/share/zoneinfo".
 pub fn load_from_os() {
   load_from_path("/usr/share/zoneinfo")
 }
 
-/// Load timezone database from provided directory
+/// Load time zone database from provided directory. This is
+/// useful if you have compiled your own version of the [IANA
+/// time zone database](https://data.iana.org/time-zones/tz-link.html)
+/// or they are not stored in the standard location.
 pub fn load_from_path(path: String) {
   let parts = filepath.split(path)
   let drop_number = list.length(parts)
@@ -50,12 +55,18 @@ pub fn load_from_path(path: String) {
   )
 }
 
-/// Create new empty TzDatabase.
+/// Create new empty TzDatabase. This can be useful if you
+/// will be loading TZif files using a different method, for
+/// example over the internet, and wish to load them up into
+/// a `TzDatabase` record.
 pub fn new() -> TzDatabase {
   TzDatabase([], dict.new())
 }
 
-/// Add new timezone definition to TzDatabase.
+/// Add new time zone definition to TzDatabase. This can add
+/// TZif data which has been parsed and loaded into a `parser.TzFile`
+/// record. Each zone must be given a `zone_name` which can be used to
+/// retrieve that time zone's data.
 pub fn add_tzfile(
   db: TzDatabase,
   zone_name: String,
@@ -87,7 +98,8 @@ fn process_tzfile(
   Ok(#(zone_name, timeinfo))
 }
 
-/// Get all timezones in the database
+/// Get all list of all time zone names within the
+/// time zone database.
 pub fn get_available_timezones(db: TzDatabase) -> List(String) {
   db.zone_names
 }
@@ -96,6 +108,9 @@ pub fn get_available_timezones(db: TzDatabase) -> List(String) {
 /// - `offset` is the offset from UTC.
 /// - `is_dst` indicates if it is daylight savings time
 /// - `designation` is the time zone designation
+/// This is the same information provided by a `TtInfo` record, but
+/// modified to use the [gleam_time](https://hexdocs.pm/gleam_time/index.html)
+/// duration type and a boolean for the daylight saving time indication.
 pub type ZoneParameters {
   ZoneParameters(offset: Duration, is_dst: Bool, designation: String)
 }
@@ -143,9 +158,54 @@ pub fn get_zone_parameters(
   Ok(ZoneParameters(slice.utoff, slice.isdst, slice.designation))
 }
 
-// Below are some things I previously had elsewhere
+/// Check if a time zone within the database has leap second data.
+/// For some reason not all time zone files seem to have leap second
+/// data. The "right/UTC" zone generally does have leap second information, but
+/// is not always available.
+pub fn has_leap_second_data(
+  zone_name: String,
+  db: TzDatabase,
+) -> Result(Bool, TzDatabaseError) {
+  use tzdata <- result.try(
+    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNotFound),
+  )
 
-/// Timezone definition slice
+  case list.length(tzdata.fields.leapsecond_values) {
+    0 -> Ok(False)
+    _ -> Ok(True)
+  }
+}
+
+/// Find the number of leap seconds at a given `Timestamp` ts using the
+/// given time zone. Not all time zones have leap second data, and if there
+/// is no data present, this function will return a `ProcessingError`.
+/// Typically the "right/UTC" time zone will have leap second data.
+pub fn leap_seconds(
+  ts: timestamp.Timestamp,
+  zone_name: String,
+  db: TzDatabase,
+) -> Result(Int, TzDatabaseError) {
+  use tzdata <- result.try(
+    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNotFound),
+  )
+
+  let #(ts_seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
+
+  case list.length(tzdata.fields.leapsecond_values) {
+    0 -> Error(ProcessingError)
+    _ -> {
+      tzdata.fields.leapsecond_values
+      |> list.fold_until(Ok(0), fn(acc, leap_second_info) {
+        case leap_second_info.0 < ts_seconds {
+          True -> list.Continue(Ok(leap_second_info.1))
+          False -> list.Stop(acc)
+        }
+      })
+    }
+  }
+}
+
+// Timezone definition slice
 type TtSlice {
   TtSlice(start_time: Int, utoff: Duration, isdst: Bool, designation: String)
 }

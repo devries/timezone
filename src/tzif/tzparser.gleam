@@ -1,8 +1,14 @@
-//// Parser for [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
-//// formatted files. This parser can parse the header and initial data section for
-//// all tzfile formatted files as well as the header and data section of version 2
-//// format tzfiles. Versions 3 format and version 4 format extensions are not supported
-//// by this parser right now.
+//// Parser for Time Zone Information File formatted data, also knows as
+//// [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
+//// formatted files. This parser can parse version 1, 2, 3, and 4 TZif files. Be aware
+//// that version 1 files use 32-bit integers to represent time and therefore have a
+//// limited time range. Versions 2 and higher use 64 bit integers and do not suffer from
+//// those limitations. All modern tz database distributions use version 2 or higher.
+////
+//// This parser will parse the header and initial data section for
+//// all TZif files. It does not parse the extensions for versions 3 format and version 4
+//// format files, however the data is returned as unparsed binary data in the `remains`
+//// portion of the `TzFile` record.
 
 import gleam/bit_array
 import gleam/int
@@ -30,7 +36,8 @@ pub type TzFileError {
 /// Header of the tzfile. This uses the same label names as
 /// the extensions of the `tzh_` integer variables
 /// defined in the [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.htmlc)
-/// man page.
+/// man page. The names of the labels in the record match those
+/// described in the web page without the `tzf_` prefix.
 pub type TzFileHeader {
   TzFileHeader(
     version: Int,
@@ -43,7 +50,10 @@ pub type TzFileHeader {
   )
 }
 
-/// Fields within the tzfile.
+/// Fields within the tzfile. These fields are described
+/// in the [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
+/// man page and are labeled in the same order as presented
+/// on that page and within the file itself.
 pub type TzFileFields {
   TzFileFields(
     transition_times: List(Int),
@@ -57,15 +67,19 @@ pub type TzFileFields {
 }
 
 /// Parsed tzfile record containing the header, fields, as well as
-/// any remaining data after the fields. The remaining data is usually
-/// an ASCII string starting with a newline.
+/// any remaining data after the parsed fields. The remaining data is usually
+/// an ASCII string starting with a newline. The format of the remaining
+/// data is described in the [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
+/// man page and will depend on the version number given in the `header`
+/// record.
 pub type TzFile {
   TzFile(header: TzFileHeader, fields: TzFileFields, remains: BitArray)
 }
 
 /// This record represents the ttinfo structs as defined within the
 /// [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html) format
-/// man page.
+/// man page. These structures contain the raw time zone parameters
+/// which are used to convert from UTC to a particular time zone.
 pub type TtInfo {
   TtInfo(utoff: Int, isdst: Int, desigidx: Int)
 }
