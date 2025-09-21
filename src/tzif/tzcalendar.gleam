@@ -48,7 +48,7 @@ pub type TimeAndZone {
 /// import tzif/database
 ///
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
-/// let db = database.load_from_os()
+/// let assert Ok(db) = database.load_from_os()
 /// 
 /// get_time_and_zone(ts, "America/New_York", db)
 /// // Ok(TimeInZone(
@@ -92,7 +92,7 @@ pub fn get_time_and_zone(
 /// import tzif/database
 ///
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
-/// let db = database.load_from_os()
+/// let assert Ok(db) = database.load_from_os()
 /// 
 /// to_calendar(ts, "America/New_York", db)
 /// // Ok(#(

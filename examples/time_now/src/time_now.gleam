@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/result
 import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
@@ -15,10 +16,8 @@ pub fn main() {
   }
 }
 
-fn print_all_times(
-  now: timestamp.Timestamp,
-) -> Result(Nil, database.TzDatabaseError) {
-  let db = database.load_from_os()
+fn print_all_times(now: timestamp.Timestamp) -> Result(Nil, Nil) {
+  use db <- result.map(database.load_from_os())
 
   database.get_available_timezones(db)
   |> list.map(fn(zone_name) {
@@ -31,7 +30,7 @@ fn print_all_times(
         io.println(string.pad_end(zone_name <> ":", 40, " ") <> "ERROR")
     }
   })
-  Ok(Nil)
+  Nil
 }
 
 fn format_time(tiz: tzcalendar.TimeAndZone) -> String {

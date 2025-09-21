@@ -1,3 +1,7 @@
+//// These types and functions are designed to let you retrieve information
+//// from TZif formatted data you provide, or timezone data loaded from the
+//// operating system. 
+
 import filepath
 import gleam/dict
 import gleam/list
@@ -22,24 +26,26 @@ pub opaque type TzDatabase {
 
 /// TzDatabase error types
 pub type TzDatabaseError {
-  /// There is no information available for this zone.
-  ZoneNotFound
-  /// Unable to provide zone information due to missing or
-  /// incomplete data.
-  ProcessingError
+  /// The zone was not found in the database
+  ZoneNameNotFound
+  /// Information, including UTC offset, zone designation, or leap
+  /// second information was not found for this time zone.
+  InfoNotFound
 }
 
 /// Load time zone database from default operating system location
-/// which is typically "/usr/share/zoneinfo".
-pub fn load_from_os() {
+/// which is typically "/usr/share/zoneinfo". If no parsable TZif
+/// files were found, returns `Error(Nil)`.
+pub fn load_from_os() -> Result(TzDatabase, Nil) {
   load_from_path("/usr/share/zoneinfo")
 }
 
 /// Load time zone database from provided directory. This is
 /// useful if you have compiled your own version of the [IANA
 /// time zone database](https://data.iana.org/time-zones/tz-link.html)
-/// or they are not stored in the standard location.
-pub fn load_from_path(path: String) {
+/// or they are not stored in the standard location. If no
+/// parsable TZif files were found, returns `Error(Nil)`.
+pub fn load_from_path(path: String) -> Result(TzDatabase, Nil) {
   let parts = filepath.split(path)
   let drop_number = list.length(parts)
   let assert Ok(filenames) = simplifile.get_files(path)
@@ -49,10 +55,16 @@ pub fn load_from_path(path: String) {
     |> list.map(process_tzfile(_, drop_number))
     |> result.values
 
-  TzDatabase(
-    list.map(data, fn(v) { v.0 }) |> list.sort(string.compare),
-    dict.from_list(data),
-  )
+  // If no parsable zone files were found return an Error rather than
+  // fail silently.
+  case list.length(data) {
+    0 -> Error(Nil)
+    _ ->
+      Ok(TzDatabase(
+        list.map(data, fn(v) { v.0 }) |> list.sort(string.compare),
+        dict.from_list(data),
+      ))
+  }
 }
 
 /// Create new empty TzDatabase. This can be useful if you
@@ -130,7 +142,7 @@ pub type ZoneParameters {
 /// import gleam/time/timestamp
 /// 
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
-/// let db = database.load_from_os()
+/// let assert Ok(db) = database.load_from_os()
 /// 
 /// get_zone_parameters(ts, "America/New_York", db)
 /// // Ok(ZoneParameters(
@@ -145,14 +157,14 @@ pub fn get_zone_parameters(
   db: TzDatabase,
 ) -> Result(ZoneParameters, TzDatabaseError) {
   use tzdata <- result.try(
-    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNotFound),
+    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNameNotFound),
   )
   let default = default_slice(tzdata.fields)
 
   let slices = create_slices(tzdata.fields)
 
   use slice <- result.try(
-    get_slice(ts, slices, default) |> result.replace_error(ProcessingError),
+    get_slice(ts, slices, default) |> result.replace_error(InfoNotFound),
   )
 
   Ok(ZoneParameters(slice.utoff, slice.isdst, slice.designation))
@@ -167,7 +179,7 @@ pub fn has_leap_second_data(
   db: TzDatabase,
 ) -> Result(Bool, TzDatabaseError) {
   use tzdata <- result.try(
-    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNotFound),
+    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNameNotFound),
   )
 
   case list.length(tzdata.fields.leapsecond_values) {
@@ -178,7 +190,7 @@ pub fn has_leap_second_data(
 
 /// Find the number of leap seconds at a given `Timestamp` ts using the
 /// given time zone. Not all time zones have leap second data, and if there
-/// is no data present, this function will return a `ProcessingError`.
+/// is no data present, this function will return `Error(InfoNotFound)`.
 /// Typically the "right/UTC" time zone will have leap second data.
 pub fn leap_seconds(
   ts: timestamp.Timestamp,
@@ -186,13 +198,13 @@ pub fn leap_seconds(
   db: TzDatabase,
 ) -> Result(Int, TzDatabaseError) {
   use tzdata <- result.try(
-    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNotFound),
+    dict.get(db.zone_data, zone_name) |> result.replace_error(ZoneNameNotFound),
   )
 
   let #(ts_seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
 
   case list.length(tzdata.fields.leapsecond_values) {
-    0 -> Error(ProcessingError)
+    0 -> Error(InfoNotFound)
     _ -> {
       tzdata.fields.leapsecond_values
       |> list.fold_until(Ok(0), fn(acc, leap_second_info) {

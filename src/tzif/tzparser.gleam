@@ -23,11 +23,14 @@ pub type TzFileError {
   /// Unexpected file format version
   HeaderVersionError
 
-  /// Error parsing fields within body of file
+  /// Error parsing fields not specified elsewhere from the body of a TZif file.
   BodyParseError
 
-  /// Error parsing an integer
-  IntegerParseError
+  /// Transition time parsing error
+  TransitionTimeParseError
+
+  /// TtInfo parsing error
+  TtInfoParseError
 
   /// Error Parsing leap second section
   LeapSecondParseError
@@ -160,14 +163,14 @@ fn parse_section(
     header.timecnt,
     fields,
     [],
-    integer_parser(integer_size),
+    integer_parser(integer_size, TransitionTimeParseError),
   )
   // Get the ttinfo index associated with each transition time
   use ttinfo_indecies, remain <- parse_list(
     header.timecnt,
     remain,
     [],
-    unsigned_integer_parser(8),
+    unsigned_integer_parser(8, TransitionTimeParseError),
   )
 
   // Get the ttinfo structures used in this time zone
@@ -212,7 +215,7 @@ fn parse_section(
     header.ttisstdcnt,
     remain,
     [],
-    unsigned_integer_parser(8),
+    unsigned_integer_parser(8, BodyParseError),
   )
 
   // Booleans to indicate if these are UT or local indicators
@@ -220,7 +223,7 @@ fn parse_section(
     header.ttisutcnt,
     remain,
     [],
-    unsigned_integer_parser(8),
+    unsigned_integer_parser(8, BodyParseError),
   )
 
   next(
@@ -257,9 +260,9 @@ fn parse_ttinfo(
   bits: BitArray,
   next: fn(TtInfo, BitArray) -> Result(a, TzFileError),
 ) -> Result(a, TzFileError) {
-  use utoff, bits <- integer_parser(32)(bits)
-  use isdst, bits <- unsigned_integer_parser(8)(bits)
-  use desigidx, bits <- unsigned_integer_parser(8)(bits)
+  use utoff, bits <- integer_parser(32, TtInfoParseError)(bits)
+  use isdst, bits <- unsigned_integer_parser(8, TtInfoParseError)(bits)
+  use desigidx, bits <- unsigned_integer_parser(8, TtInfoParseError)(bits)
 
   let ttinfo = TtInfo(utoff, isdst, desigidx)
 
@@ -268,24 +271,26 @@ fn parse_ttinfo(
 
 fn integer_parser(
   bit_size: Int,
+  error_to_pass: TzFileError,
 ) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TzFileError)) ->
   Result(a, TzFileError) {
   fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TzFileError)) {
     case bits {
       <<i:signed-int-big-size(bit_size), rest:bits>> -> next(i, rest)
-      _ -> Error(IntegerParseError)
+      _ -> Error(error_to_pass)
     }
   }
 }
 
 fn unsigned_integer_parser(
   bit_size: Int,
+  error_to_pass: TzFileError,
 ) -> fn(BitArray, fn(Int, BitArray) -> Result(a, TzFileError)) ->
   Result(a, TzFileError) {
   fn(bits: BitArray, next: fn(Int, BitArray) -> Result(a, TzFileError)) {
     case bits {
       <<i:unsigned-int-big-size(bit_size), rest:bits>> -> next(i, rest)
-      _ -> Error(IntegerParseError)
+      _ -> Error(error_to_pass)
     }
   }
 }

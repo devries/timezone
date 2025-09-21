@@ -119,16 +119,16 @@ pub fn has_leap_second_test() {
   assert database.has_leap_second_data("UTC", db) == Ok(False)
   assert database.has_leap_second_data("right/UTC", db) == Ok(True)
   assert database.has_leap_second_data("Invalid", db)
-    == Error(database.ZoneNotFound)
+    == Error(database.ZoneNameNotFound)
 }
 
 pub fn leap_second_check() {
   let db = get_database()
 
   assert database.leap_seconds(timestamp.from_unix_seconds(0), "UTC", db)
-    == Error(database.ProcessingError)
+    == Error(database.InfoNotFound)
   assert database.leap_seconds(timestamp.from_unix_seconds(0), "Invalid", db)
-    == Error(database.ZoneNotFound)
+    == Error(database.ZoneNameNotFound)
 
   let historical_leap_seconds =
     [
