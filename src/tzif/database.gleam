@@ -10,7 +10,7 @@ import gleam/string
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp
 import simplifile
-import tzif/tzparser
+import tzif/parser
 
 /// Time Zone Database record. This is typically created by
 /// loading from the operating system with the `load_from_os`
@@ -20,7 +20,7 @@ import tzif/tzparser
 pub opaque type TzDatabase {
   TzDatabase(
     zone_names: List(String),
-    zone_data: dict.Dict(String, tzparser.TzFile),
+    zone_data: dict.Dict(String, parser.TzFile),
   )
 }
 
@@ -82,7 +82,7 @@ pub fn new() -> TzDatabase {
 pub fn add_tzfile(
   db: TzDatabase,
   zone_name: String,
-  tzfile: tzparser.TzFile,
+  tzfile: parser.TzFile,
 ) -> TzDatabase {
   let namelist = case dict.has_key(db.zone_data, zone_name) {
     True -> db.zone_names
@@ -94,7 +94,7 @@ pub fn add_tzfile(
 fn process_tzfile(
   filename: String,
   components_to_drop: Int,
-) -> Result(#(String, tzparser.TzFile), Nil) {
+) -> Result(#(String, parser.TzFile), Nil) {
   let zone_name =
     filepath.split(filename)
     |> list.drop(components_to_drop)
@@ -103,9 +103,7 @@ fn process_tzfile(
   use tzdata <- result.try(
     simplifile.read_bits(filename) |> result.replace_error(Nil),
   )
-  use timeinfo <- result.try(
-    tzparser.parse(tzdata) |> result.replace_error(Nil),
-  )
+  use timeinfo <- result.try(parser.parse(tzdata) |> result.replace_error(Nil))
 
   Ok(#(zone_name, timeinfo))
 }
@@ -117,12 +115,10 @@ pub fn get_available_timezones(db: TzDatabase) -> List(String) {
 }
 
 /// Time zone parameters record.
-/// - `offset` is the offset from UTC.
+/// - `offset` is the offset from UTC using [gleam_time](https://hexdocs.pm/gleam_time/gleam/time/duration.html#Duration)
+///   `Duration`.
 /// - `is_dst` indicates if it is daylight savings time
 /// - `designation` is the time zone designation
-/// This is the same information provided by a `TtInfo` record, but
-/// modified to use the [gleam_time](https://hexdocs.pm/gleam_time/index.html)
-/// duration type and a boolean for the daylight saving time indication.
 pub type ZoneParameters {
   ZoneParameters(offset: Duration, is_dst: Bool, designation: String)
 }
@@ -223,7 +219,7 @@ type TtSlice {
 }
 
 // Turn time zone fields into a list of timezone information slices
-fn create_slices(fields: tzparser.TzFileFields) -> List(TtSlice) {
+fn create_slices(fields: parser.TzFileFields) -> List(TtSlice) {
   let infos =
     list.zip(fields.ttinfos, fields.designations)
     |> list.index_map(fn(tup, idx) { #(idx, tup) })
@@ -246,7 +242,7 @@ fn create_slices(fields: tzparser.TzFileFields) -> List(TtSlice) {
   |> result.values
 }
 
-fn default_slice(fields: tzparser.TzFileFields) -> Result(TtSlice, Nil) {
+fn default_slice(fields: parser.TzFileFields) -> Result(TtSlice, Nil) {
   use ttinfo <- result.try(list.first(fields.ttinfos))
   use designation <- result.try(list.first(fields.designations))
   let isdst = case ttinfo.isdst {

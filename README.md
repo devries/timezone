@@ -1,9 +1,7 @@
 # tzif
 
-<!--#
-[![Package Version](https://img.shields.io/hexpm/v/timezone)](https://hex.pm/packages/timezone)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/timezone/)
--->
+[![Package Version](https://img.shields.io/hexpm/v/tzif)](https://hex.pm/packages/tzif)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/tzif/)
 
 Time zone support for Gleam time using the IANA Time Zone Database.
 This package loads the time zone database from the standard location
@@ -18,13 +16,18 @@ of day in the given time zone.
 >
 > --- Louis Pilfold
 
-To use, add the following entry in your `gleam.toml` file dependencies:
-
+Add to your project with the command:
 ```
-tzif = { git = "git@github.com:devries/timezone.git", ref = "main" }
+gleam add tzif@1
 ```
 
 # Using the Package
+There are three modules in the `tzif` package:
+- `tzif/database` has utilities for loading the IANA Time Zone database.
+- `tzif/tzcalendar` has utilities for converting a [gleam_time](https://hexdocs.pm/gleam_time/)
+  timestamp into date and time of day in a time zone.
+- `tzif/parser` has functions and records for parsing TZif formatted data.
+
 The most straightforward use would be to load the database from the default
 location on the operating system, and then obtain a timestamp using the
 [gleam_time](https://hexdocs.pm/gleam_time/) package, and convert that timestamp
@@ -43,27 +46,30 @@ pub fn main() {
     let now = timestamp.system_time()
 
     // Load the database from the operating system
-    let db = database.load_from_os()
-
-    case tzcalendar.get_time_and_zone(now, "America/New_York", db) {
-        Ok(time_and_zone) -> {
-            // Successfully converted time to the requested time zone
-            io.println(
-                int.to_string(time_and_zone.time_of_day.hours)
-                |> string.pad_start(2, "0")
-                <> ":"
-                <> int.to_string(time_and_zone.time_of_day.minutes)
-                |> string.pad_start(2, "0")
-                <> ":"
-                <> int.to_string(time_and_zone.time_of_day.seconds)
-                |> string.pad_start(2, "0")
-                <> " "
-                <> time_and_zone.designation
-            )
+    case database.load_from_os() {
+        Ok(db) -> {
+            case tzcalendar.to_time_and_zone(now, "America/New_York", db) {
+                Ok(time_and_zone) -> {
+                    // Successfully converted time to the requested time zone
+                    io.println(
+                        int.to_string(time_and_zone.time_of_day.hours)
+                        |> string.pad_start(2, "0")
+                        <> ":"
+                        <> int.to_string(time_and_zone.time_of_day.minutes)
+                        |> string.pad_start(2, "0")
+                        <> ":"
+                        <> int.to_string(time_and_zone.time_of_day.seconds)
+                        |> string.pad_start(2, "0")
+                        <> " "
+                        <> time_and_zone.designation
+                    )
+                }
+                Error(database.ZoneNotFound) -> io.println("Time zone not found")
+                Error(database.ProcessingError) ->
+                    io.println("Error processing time zone conversion")
+            }
         }
-        Error(database.ZoneNotFound) -> io.println("Time zone not found")
-        Error(database.ProcessingError) -> io.println("Error processing time zone conversion")
-    }
+        Error(Nil) -> io.println("No parsable TZif files found.")
 }
 ```
 If you are on windows and have installed the IANA Time Zone Database, or want

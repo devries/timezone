@@ -13,7 +13,7 @@ pub fn main() {
     Error(Nil) ->
       io.println("No parsable TZif files found in default location.")
     Ok(db) -> {
-      case tzcalendar.get_time_and_zone(now, "America/New_York", db) {
+      case tzcalendar.to_time_and_zone(now, "America/New_York", db) {
         Ok(time_and_zone) -> {
           // Successfully converted time to the requested time zone
           io.println(

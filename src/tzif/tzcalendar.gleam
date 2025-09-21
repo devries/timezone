@@ -50,7 +50,7 @@ pub type TimeAndZone {
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
 /// let assert Ok(db) = database.load_from_os()
 /// 
-/// get_time_and_zone(ts, "America/New_York", db)
+/// to_time_and_zone(ts, "America/New_York", db)
 /// // Ok(TimeInZone(
 /// //   Date(2025, September, 18),
 /// //   TimeOfDay(15, 21, 40, 0),
@@ -59,7 +59,7 @@ pub type TimeAndZone {
 /// //   True,
 /// // ))
 /// ```
-pub fn get_time_and_zone(
+pub fn to_time_and_zone(
   ts: Timestamp,
   zone_name: String,
   db: TzDatabase,
@@ -104,7 +104,7 @@ pub fn to_calendar(
   zone_name: String,
   db: TzDatabase,
 ) -> Result(#(calendar.Date, calendar.TimeOfDay), TzDatabaseError) {
-  use tiz <- result.map(get_time_and_zone(ts, zone_name, db))
+  use tiz <- result.map(to_time_and_zone(ts, zone_name, db))
 
   #(tiz.date, tiz.time_of_day)
 }

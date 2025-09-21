@@ -21,7 +21,7 @@ fn print_all_times(now: timestamp.Timestamp) -> Result(Nil, Nil) {
 
   database.get_available_timezones(db)
   |> list.map(fn(zone_name) {
-    case tzcalendar.get_time_and_zone(now, zone_name, db) {
+    case tzcalendar.to_time_and_zone(now, zone_name, db) {
       Ok(tiz) ->
         io.println(
           string.pad_end(zone_name <> ":", 40, " ") <> format_time(tiz),
