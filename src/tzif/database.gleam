@@ -48,7 +48,9 @@ pub fn load_from_os() -> Result(TzDatabase, Nil) {
 pub fn load_from_path(path: String) -> Result(TzDatabase, Nil) {
   let parts = filepath.split(path)
   let drop_number = list.length(parts)
-  let assert Ok(filenames) = simplifile.get_files(path)
+  use filenames <- result.try(
+    simplifile.get_files(path) |> result.replace_error(Nil),
+  )
 
   let data =
     filenames
