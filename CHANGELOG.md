@@ -1,4 +1,4 @@
-## Unreleased
+## v1.0.1 - 2025-09-23
 - Fix bug where the library will crash if asked to load Time Zone information
   from a nonexistant directory.
   
