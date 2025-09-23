@@ -1,4 +1,4 @@
-## Upcoming
+## v1.1.0 - 2025-09-23
 - Add `tzcalendar.atomic_difference` to calculate the actual difference between
   two timestamps including leap seconds.
 - Add a `tzcalendar.from_calendar` function. Test shifts around daylight savings
