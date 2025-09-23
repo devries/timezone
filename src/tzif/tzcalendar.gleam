@@ -16,6 +16,7 @@
 //// article on Wikipedia. The time zone identifiers are passed to many of the
 //// functions of this library as the `zone_name` parameter.
 
+import gleam/list
 import gleam/result
 import gleam/time/calendar.{type Date, type TimeOfDay}
 import gleam/time/duration.{type Duration}
@@ -107,4 +108,60 @@ pub fn to_calendar(
   use tiz <- result.map(to_time_and_zone(ts, zone_name, db))
 
   #(tiz.date, tiz.time_of_day)
+}
+
+/// Create a list of timestamps from a calendar date and time. This may produce zero, one
+/// or two timestamps in a list depending on if that time is possible in the given
+/// time zone or if it is ambiguous. This tends to happen every daylight saving
+/// period. When moving forward one hour, the calendar times during the skipped hour
+/// are not possible, so no timestamp values would be returned. When moving back
+/// one hour the overlap period is repeated, yielding two timestamps per wall clock time.
+///
+/// This
+/// returns a `TzDatabaseError` if there is an issue finding time zone information.
+pub fn from_calendar(
+  date: calendar.Date,
+  time: calendar.TimeOfDay,
+  zone_name: String,
+  db: TzDatabase,
+) -> Result(List(timestamp.Timestamp), database.TzDatabaseError) {
+  // Assume no shift will be more than 24 hours
+  let ts_utc = timestamp.from_calendar(date, time, duration.seconds(0))
+
+  // What are the offsets at +/- the 24 hour window
+  use before_zone <- result.try(
+    timestamp.add(ts_utc, duration.hours(-24))
+    |> database.get_zone_parameters(zone_name, db),
+  )
+  use after_zone <- result.try(
+    timestamp.add(ts_utc, duration.hours(24))
+    |> database.get_zone_parameters(zone_name, db),
+  )
+
+  case before_zone.offset == after_zone.offset {
+    True -> {
+      // No time shift in the period of interest. Easy conversion.
+      Ok([timestamp.from_calendar(date, time, before_zone.offset)])
+    }
+    False -> {
+      // Check that we get the same UTC offset if we convert the date and
+      // time to a timestamp using that offset and then find the offset
+      // of the time zone at that timestamp. This is a round trip from utc
+      // offset back to utc offset which should yield the same value if the utc
+      // offset we use is correct for the time zone at that time and date.
+      [before_zone.offset, after_zone.offset]
+      |> list.filter(fn(offset) {
+        let zone =
+          timestamp.from_calendar(date, time, offset)
+          |> database.get_zone_parameters(zone_name, db)
+        case zone {
+          Ok(database.ZoneParameters(round_trip_offset, _, _)) ->
+            offset == round_trip_offset
+          Error(_) -> False
+        }
+      })
+      |> list.map(fn(offset) { timestamp.from_calendar(date, time, offset) })
+      |> Ok
+    }
+  }
 }

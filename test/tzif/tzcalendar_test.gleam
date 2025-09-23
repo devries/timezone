@@ -10,6 +10,8 @@ const tzsample = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAGAAAABgAAAAAAAADsAAAABgAAABSAAA
 
 const tzsample2 = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAABVVEMAVFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAQAAAAAAABVVEMAClVUQzAK"
 
+const canberra = "VFppZjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAACOAAAABAAAAA6AAAAAnE7CgJy8LwDLVLMAy8dlgMy3VoDNp0eAzqBzAM+HKYADcDmABA0cAAVQG4AF9jiABy/9gAfWGoAJD9+ACbX8gArvwYALnxkADNjeAA1++wAOuMAAD17dABCYogARPr8AEniEABMeoQAUWGYAFP6DABY4SAAXDImAGCFkgBjHgYAaAUaAGqdjgBvhKIAch0WAHcEKgB55nIAfl7IAIFl+gCGAzoAiQpsAI2nrACQifQAlSc0AJe/qACcprwAnz8wAKQmRACmvrgAq6XMAK5jKgCzSj4AteKyALrJxgC9YjoAwklOAMV1agDJyNYAzPTyANFIXgDUdHoA2MfmANv0AgDgbFgA43OKAOafpgDq8xIA72toAPKXhAD26vAA+hcMAP5qeAEBlpQBBg7qAQkWHAENjnIBELqOARUN+gEYFSwBHI2CAR/eiAEjnkwBJ14QASsd1AEu3ZgBMp1cATZdIAE6HOQBPdyoAUHBVgFFgRoBSUDeAU0AogFQwGYBVIAqAVg/7gFb/7IBX792AWN/OgFnPv4Bav7CAW7jcAFyozQBdmL4AXoivAF94oABgaJEAYViCAGJIcwBjOGQAZChVAGUYRgBmEXGAZwFigGfxU4Bo4USAadE1gGrBJoBrsReAbKEIgG2Q+YBugOqAb3DbgHBqBwBxWfgAcknpAHM52gB0KcsAdRm8AHYJrQB2+Z4Ad+mPAHjZgAB5yXEAerliAHuyjYB8on6AfZJvgH6CYIB/clGAAwECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQAAjcQAAAAAmrABBAAAjKAACQAAjKAACUxNVABBRURUAEFFU1QAAAEBAFRaaWYyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAjgAAAAQAAAAO/////3MWfzz/////nE7CgP////+cvC8A/////8tUswD/////y8dlgP/////Mt1aA/////82nR4D/////zqBzAP/////PhymAAAAAAANwOYAAAAAABA0cAAAAAAAFUBuAAAAAAAX2OIAAAAAABy/9gAAAAAAH1hqAAAAAAAkP34AAAAAACbX8gAAAAAAK78GAAAAAAAufGQAAAAAADNjeAAAAAAANfvsAAAAAAA64wAAAAAAAD17dAAAAAAAQmKIAAAAAABE+vwAAAAAAEniEAAAAAAATHqEAAAAAABRYZgAAAAAAFP6DAAAAAAAWOEgAAAAAABcMiYAAAAAAGCFkgAAAAAAYx4GAAAAAABoBRoAAAAAAGqdjgAAAAAAb4SiAAAAAAByHRYAAAAAAHcEKgAAAAAAeeZyAAAAAAB+XsgAAAAAAIFl+gAAAAAAhgM6AAAAAACJCmwAAAAAAI2nrAAAAAAAkIn0AAAAAACVJzQAAAAAAJe/qAAAAAAAnKa8AAAAAACfPzAAAAAAAKQmRAAAAAAApr64AAAAAACrpcwAAAAAAK5jKgAAAAAAs0o+AAAAAAC14rIAAAAAALrJxgAAAAAAvWI6AAAAAADCSU4AAAAAAMV1agAAAAAAycjWAAAAAADM9PIAAAAAANFIXgAAAAAA1HR6AAAAAADYx+YAAAAAANv0AgAAAAAA4GxYAAAAAADjc4oAAAAAAOafpgAAAAAA6vMSAAAAAADva2gAAAAAAPKXhAAAAAAA9urwAAAAAAD6FwwAAAAAAP5qeAAAAAABAZaUAAAAAAEGDuoAAAAAAQkWHAAAAAABDY5yAAAAAAEQuo4AAAAAARUN+gAAAAABGBUsAAAAAAEcjYIAAAAAAR/eiAAAAAABI55MAAAAAAEnXhAAAAAAASsd1AAAAAABLt2YAAAAAAEynVwAAAAAATZdIAAAAAABOhzkAAAAAAE93KgAAAAAAUHBVgAAAAABRYEaAAAAAAFJQN4AAAAAAU0AogAAAAABUMBmAAAAAAFUgCoAAAAAAVg/7gAAAAABW/+yAAAAAAFfv3YAAAAAAWN/OgAAAAABZz7+AAAAAAFq/sIAAAAAAW7jcAAAAAABcqM0AAAAAAF2YvgAAAAAAXoivAAAAAABfeKAAAAAAAGBokQAAAAAAYViCAAAAAABiSHMAAAAAAGM4ZAAAAAAAZChVAAAAAABlGEYAAAAAAGYRcYAAAAAAZwFigAAAAABn8VOAAAAAAGjhRIAAAAAAadE1gAAAAABqwSaAAAAAAGuxF4AAAAAAbKEIgAAAAABtkPmAAAAAAG6A6oAAAAAAb3DbgAAAAABwagcAAAAAAHFZ+AAAAAAAcknpAAAAAABzOdoAAAAAAHQpywAAAAAAdRm8AAAAAAB2Ca0AAAAAAHb5ngAAAAAAd+mPAAAAAAB42YAAAAAAAHnJcQAAAAAAerliAAAAAAB7so2AAAAAAHyifoAAAAAAfZJvgAAAAAB+gmCAAAAAAH9yUYADAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgECAQIBAACNxAAAAACasAEEAACMoAAJAACMoAAJTE1UAEFFRFQAQUVTVAAAAQEACkFFU1QtMTBBRURULE0xMC4xLjAsTTQuMS4wLzMK"
+
 fn get_database() -> database.TzDatabase {
   let assert Ok(tzdata) = bit_array.base64_decode(tzsample)
   let assert Ok(tz_ny) = parser.parse(tzdata)
@@ -17,9 +19,13 @@ fn get_database() -> database.TzDatabase {
   let assert Ok(tzdata2) = bit_array.base64_decode(tzsample2)
   let assert Ok(tz_utc) = parser.parse(tzdata2)
 
+  let assert Ok(tzdata3) = bit_array.base64_decode(canberra)
+  let assert Ok(tz_au) = parser.parse(tzdata3)
+
   database.new()
   |> database.add_tzfile("America/New_York", tz_ny)
   |> database.add_tzfile("UTC", tz_utc)
+  |> database.add_tzfile("Australia/Canberra", tz_au)
 }
 
 pub fn get_time_in_local_zone_test() {
@@ -66,4 +72,197 @@ pub fn get_time_only_in_utc_zone_test() {
       calendar.Date(2025, calendar.September, 17),
       calendar.TimeOfDay(5, 18, 0, 0),
     ))
+}
+
+pub fn timestamp_from_calendar_test() {
+  let db = get_database()
+  assert tzcalendar.from_calendar(
+      calendar.Date(2025, calendar.January, 23),
+      calendar.TimeOfDay(13, 0, 0, 0),
+      "America/New_York",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_737_655_200)])
+}
+
+pub fn us_daylight_start_test() {
+  let db = get_database()
+  let dst_start_date = calendar.Date(2025, calendar.March, 9)
+
+  let one = calendar.TimeOfDay(1, 0, 0, 0)
+  let one_thirty = calendar.TimeOfDay(1, 30, 0, 0)
+  let two = calendar.TimeOfDay(2, 0, 0, 0)
+  let two_thirty = calendar.TimeOfDay(2, 30, 0, 0)
+  let three = calendar.TimeOfDay(3, 0, 0, 0)
+  let three_thirty = calendar.TimeOfDay(3, 30, 0, 0)
+
+  assert tzcalendar.from_calendar(dst_start_date, one, "America/New_York", db)
+    == Ok([timestamp.from_unix_seconds(1_741_500_000)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      one_thirty,
+      "America/New_York",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_741_501_800)])
+  assert tzcalendar.from_calendar(dst_start_date, two, "America/New_York", db)
+    == Ok([])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      two_thirty,
+      "America/New_York",
+      db,
+    )
+    == Ok([])
+  assert tzcalendar.from_calendar(dst_start_date, three, "America/New_York", db)
+    == Ok([timestamp.from_unix_seconds(1_741_503_600)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      three_thirty,
+      "America/New_York",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_741_505_400)])
+}
+
+pub fn us_daylight_stop_test() {
+  let db = get_database()
+  let dst_start_date = calendar.Date(2025, calendar.November, 2)
+
+  let one = calendar.TimeOfDay(1, 0, 0, 0)
+  let one_thirty = calendar.TimeOfDay(1, 30, 0, 0)
+  let two = calendar.TimeOfDay(2, 0, 0, 0)
+  let two_thirty = calendar.TimeOfDay(2, 30, 0, 0)
+  let three = calendar.TimeOfDay(3, 0, 0, 0)
+  let three_thirty = calendar.TimeOfDay(3, 30, 0, 0)
+
+  assert tzcalendar.from_calendar(dst_start_date, one, "America/New_York", db)
+    == Ok([
+      timestamp.from_unix_seconds(1_762_059_600),
+      timestamp.from_unix_seconds(1_762_063_200),
+    ])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      one_thirty,
+      "America/New_York",
+      db,
+    )
+    == Ok([
+      timestamp.from_unix_seconds(1_762_061_400),
+      timestamp.from_unix_seconds(1_762_065_000),
+    ])
+  assert tzcalendar.from_calendar(dst_start_date, two, "America/New_York", db)
+    == Ok([timestamp.from_unix_seconds(1_762_066_800)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      two_thirty,
+      "America/New_York",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_762_068_600)])
+  assert tzcalendar.from_calendar(dst_start_date, three, "America/New_York", db)
+    == Ok([timestamp.from_unix_seconds(1_762_070_400)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      three_thirty,
+      "America/New_York",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_762_072_200)])
+}
+
+pub fn au_daylight_start_test() {
+  let db = get_database()
+  let dst_start_date = calendar.Date(2025, calendar.October, 5)
+
+  let one = calendar.TimeOfDay(1, 0, 0, 0)
+  let one_thirty = calendar.TimeOfDay(1, 30, 0, 0)
+  let two = calendar.TimeOfDay(2, 0, 0, 0)
+  let two_thirty = calendar.TimeOfDay(2, 30, 0, 0)
+  let three = calendar.TimeOfDay(3, 0, 0, 0)
+  let three_thirty = calendar.TimeOfDay(3, 30, 0, 0)
+
+  assert tzcalendar.from_calendar(dst_start_date, one, "Australia/Canberra", db)
+    == Ok([timestamp.from_unix_seconds(1_759_590_000)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      one_thirty,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_759_591_800)])
+  assert tzcalendar.from_calendar(dst_start_date, two, "Australia/Canberra", db)
+    == Ok([])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      two_thirty,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      three,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_759_593_600)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      three_thirty,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_759_595_400)])
+}
+
+pub fn au_daylight_stop_test() {
+  let db = get_database()
+  let dst_start_date = calendar.Date(2025, calendar.April, 6)
+
+  let one = calendar.TimeOfDay(1, 0, 0, 0)
+  let one_thirty = calendar.TimeOfDay(1, 30, 0, 0)
+  let two = calendar.TimeOfDay(2, 0, 0, 0)
+  let two_thirty = calendar.TimeOfDay(2, 30, 0, 0)
+  let three = calendar.TimeOfDay(3, 0, 0, 0)
+  let three_thirty = calendar.TimeOfDay(3, 30, 0, 0)
+
+  assert tzcalendar.from_calendar(dst_start_date, one, "Australia/Canberra", db)
+    == Ok([timestamp.from_unix_seconds(1_743_861_600)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      one_thirty,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_743_863_400)])
+  assert tzcalendar.from_calendar(dst_start_date, two, "Australia/Canberra", db)
+    == Ok([
+      timestamp.from_unix_seconds(1_743_865_200),
+      timestamp.from_unix_seconds(1_743_868_800),
+    ])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      two_thirty,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([
+      timestamp.from_unix_seconds(1_743_867_000),
+      timestamp.from_unix_seconds(1_743_870_600),
+    ])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      three,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_743_872_400)])
+  assert tzcalendar.from_calendar(
+      dst_start_date,
+      three_thirty,
+      "Australia/Canberra",
+      db,
+    )
+    == Ok([timestamp.from_unix_seconds(1_743_874_200)])
 }

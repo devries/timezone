@@ -264,7 +264,7 @@ fn get_slice(
 
   slices
   |> list.fold_until(default, fn(acc, slice) {
-    case slice.start_time < seconds {
+    case slice.start_time <= seconds {
       True -> list.Continue(Ok(slice))
       False -> list.Stop(acc)
     }
