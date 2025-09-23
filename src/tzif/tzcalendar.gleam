@@ -120,11 +120,11 @@ pub fn to_calendar(
 /// This
 /// returns a `TzDatabaseError` if there is an issue finding time zone information.
 pub fn from_calendar(
-  date: calendar.Date,
-  time: calendar.TimeOfDay,
+  date: Date,
+  time: TimeOfDay,
   zone_name: String,
   db: TzDatabase,
-) -> Result(List(timestamp.Timestamp), database.TzDatabaseError) {
+) -> Result(List(Timestamp), database.TzDatabaseError) {
   // Assume no shift will be more than 24 hours
   let ts_utc = timestamp.from_calendar(date, time, duration.seconds(0))
 
@@ -164,4 +164,22 @@ pub fn from_calendar(
       |> Ok
     }
   }
+}
+
+/// The actual difference between two timestamps. This includes intervening
+/// leap seconds into the calculation. A time zone which includes leap seconds
+/// should be given for the zone name. We recommend using "right/UTC" if it is
+/// installed on your system.
+pub fn atomic_difference(
+  left: Timestamp,
+  right: Timestamp,
+  zone_name: String,
+  db: TzDatabase,
+) -> Result(Duration, database.TzDatabaseError) {
+  let standard_difference = timestamp.difference(left, right)
+
+  use right_ls <- result.try(database.leap_seconds(right, zone_name, db))
+  use left_ls <- result.map(database.leap_seconds(left, zone_name, db))
+
+  duration.add(standard_difference, duration.seconds(right_ls - left_ls))
 }
