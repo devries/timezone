@@ -292,3 +292,25 @@ pub fn atomic_difference_test() {
   assert tzcalendar.atomic_difference(middle, late, "right/UTC", db)
     == Ok(duration.seconds(1_104_537_612))
 }
+
+pub fn atomic_difference_one_second_test() {
+  let db = get_database()
+
+  let before =
+    timestamp.from_calendar(
+      calendar.Date(2016, calendar.December, 31),
+      calendar.TimeOfDay(23, 59, 59, 0),
+      calendar.utc_offset,
+    )
+  let after =
+    timestamp.from_calendar(
+      calendar.Date(2017, calendar.January, 1),
+      calendar.TimeOfDay(0, 0, 0, 0),
+      calendar.utc_offset,
+    )
+
+  assert timestamp.difference(before, after) == duration.seconds(1)
+
+  assert tzcalendar.atomic_difference(before, after, "right/UTC", db)
+    == Ok(duration.seconds(2))
+}

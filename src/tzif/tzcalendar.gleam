@@ -126,7 +126,7 @@ pub fn from_calendar(
   db: TzDatabase,
 ) -> Result(List(Timestamp), database.TzDatabaseError) {
   // Assume no shift will be more than 24 hours
-  let ts_utc = timestamp.from_calendar(date, time, duration.seconds(0))
+  let ts_utc = timestamp.from_calendar(date, time, calendar.utc_offset)
 
   // What are the offsets at +/- the 24 hour window
   use before_zone <- result.try(
