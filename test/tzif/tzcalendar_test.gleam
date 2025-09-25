@@ -314,3 +314,12 @@ pub fn atomic_difference_one_second_test() {
   assert tzcalendar.atomic_difference(before, after, "right/UTC", db)
     == Ok(duration.seconds(2))
 }
+
+pub fn atomic_difference_no_leap_second_test() {
+  let db = get_database()
+  let start = timestamp.from_unix_seconds(0)
+  let end = timestamp.from_unix_seconds(644_241_600)
+
+  assert tzcalendar.atomic_difference(start, end, "UTC", db)
+    == Error(database.InfoNotFound)
+}
