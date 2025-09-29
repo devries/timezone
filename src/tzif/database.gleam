@@ -201,12 +201,16 @@ pub fn leap_seconds(
 
   let #(ts_seconds, _) = timestamp.to_unix_seconds_and_nanoseconds(ts)
 
+  // Converting the leapseconds to unix time rather than monotonic time, but the "right/"
+  // timezones assume monotonic time. I am assuming timestamp represents
+  // unix time.
   case list.length(tzdata.fields.leapsecond_values) {
     0 -> Error(InfoNotFound)
     _ -> {
       tzdata.fields.leapsecond_values
+      |> list.map(fn(ls_tuple) { #(ls_tuple.0 - ls_tuple.1 + 1, ls_tuple.1) })
       |> list.fold_until(Ok(0), fn(acc, leap_second_info) {
-        case leap_second_info.0 < ts_seconds {
+        case leap_second_info.0 <= ts_seconds {
           True -> list.Continue(Ok(leap_second_info.1))
           False -> list.Stop(acc)
         }
