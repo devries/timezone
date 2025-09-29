@@ -1,3 +1,8 @@
+## Unreleased
+- Fix issue with leap second tables being recorded in unix leap seconds
+  rather than unix seconds.
+- Add tests to test exact placement of leap seconds
+
 ## v1.1.0 - 2025-09-23
 - Add `tzcalendar.atomic_difference` to calculate the actual difference between
   two timestamps including leap seconds.
