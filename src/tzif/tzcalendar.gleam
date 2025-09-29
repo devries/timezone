@@ -119,6 +119,22 @@ pub fn to_calendar(
 ///
 /// This
 /// returns a `TzDatabaseError` if there is an issue finding time zone information.
+///
+/// # Example
+///
+/// ```gleam
+/// import gleam/time/calendar
+/// import tzif/database
+///
+/// let assert Ok(db) = database.load_from_os()
+/// 
+/// from_calendar(
+///   calendar.Date(2025, calendar.November, 2),
+///   calendar.TimeOfDay(1, 30, 0, 0),
+///   "America/New_York",
+///   db,
+/// )
+/// // Ok([Timestamp(1762061400, 0), Timestamp(1762065000, 0)])
 pub fn from_calendar(
   date: Date,
   time: TimeOfDay,
