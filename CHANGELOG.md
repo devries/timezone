@@ -1,6 +1,6 @@
-## Unreleased
-- Fix issue with leap second tables being recorded in unix leap seconds
-  rather than unix seconds.
+## v1.1.1 - 2025-09-29
+- Fix issue with leap second tables being recorded in unix leap time
+  rather than unix time.
 - Add tests to test exact placement of leap seconds
 
 ## v1.1.0 - 2025-09-23
