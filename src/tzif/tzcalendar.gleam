@@ -52,7 +52,7 @@ pub type TimeAndZone {
 /// let assert Ok(db) = database.load_from_os()
 /// 
 /// to_time_and_zone(ts, "America/New_York", db)
-/// // Ok(TimeInZone(
+/// // Ok(TimeAndZone(
 /// //   Date(2025, September, 18),
 /// //   TimeOfDay(15, 21, 40, 0),
 /// //   Duration(-14_400, 0),
