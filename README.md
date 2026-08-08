@@ -24,13 +24,13 @@ gleam add tzif@1
 # Using the Package
 There are three modules in the `tzif` package:
 - `tzif/database` has utilities for loading the IANA Time Zone database.
-- `tzif/tzcalendar` has utilities for converting a [gleam_time](https://hexdocs.pm/gleam_time/)
+- `tzif/tzcalendar` has utilities for converting a [gleam_time](https://gleam-time.hexdocs.pm/)
   timestamp into date and time of day in a time zone.
 - `tzif/parser` has functions and records for parsing TZif formatted data.
 
 The most straightforward use would be to load the database from the default
 location on the operating system, and then obtain a timestamp using the
-[gleam_time](https://hexdocs.pm/gleam_time/) package, and convert that timestamp
+[gleam_time](https://gleam-time.hexdocs.pm/) package, and convert that timestamp
 into a time of day in a time zone using the IANA time zone name. An example
 of that is shown in the code below.
 
