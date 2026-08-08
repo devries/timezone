@@ -7,10 +7,12 @@ version = "1.1.2"
 description = "Time Zone Information File Utilities"
 licences = ["MIT"]
 repository = { type = "github", user = "devries", repo = "timezone" }
-# links = [{ title = "Website", href = "" }]
-#
-# For a full reference of all the available options, you can have a look at
-# https://gleam.run/writing-gleam/gleam-toml/.
+
+[documentation]
+pages = [
+  { title = "Changelog", path = "changelog.html", source = "./CHANGELOG.md" },
+  { title = "Examples", path = "examples.html", source = "./pages/examples.md"},
+]
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
