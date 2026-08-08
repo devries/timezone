@@ -83,6 +83,12 @@ package manager for your operating system to keep the time zone database up to
 date. All common unix variants have time zone database packages and install the
 time zone database files into the `/usr/share/zoneinfo` directory by default.
 
+If, however, your system does not have time zone data installed, you can use
+the [zones](https://zones.hexdocs.pm/) package to install a database of
+timezone data as a gleam library and dependency. To use the zones timezone
+data get the database using the `zones.database` function rather than
+`database.load_from_os` or `database.load_from_path`.
+
 ## MacOS
 The files should be included in your operating system by default. Check the
 `/usr/share/zoneinfo` directory and see if they are present.
@@ -148,7 +154,6 @@ Similarly, using DNF:
 sudo dnf install tzdata
 ```
 ## Windows
-Microsoft Windows has a different mechanism for handling time zones, however
-you can install the IANA Time Zone Database by [downloading the latest
-version](https://www.iana.org/time-zones) and compiling the zone files using
-[the directions in the repository](https://data.iana.org/time-zones/tz-link.html).
+Microsoft Windows has a different mechanism for handling time zones, so we
+recommend using the [zones](https://zones.hexdocs.pm/) portable gleam timezone
+data library.
