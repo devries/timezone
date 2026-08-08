@@ -1,5 +1,6 @@
 ## v1.1.3 - 2026-08-08
-- Add references to the zones gleam package with portable timezone data
+- Add references to the zones gleam package with portable timezone data.
+- Update documentation.
 
 ## v1.1.2 - 2025-11-01
 - Fix issue with documentation.
