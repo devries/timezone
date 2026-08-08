@@ -24,13 +24,13 @@ gleam add tzif@1
 # Using the Package
 There are three modules in the `tzif` package:
 - `tzif/database` has utilities for loading the IANA Time Zone database.
-- `tzif/tzcalendar` has utilities for converting a [gleam_time](https://hexdocs.pm/gleam_time/)
+- `tzif/tzcalendar` has utilities for converting a [gleam_time](https://gleam-time.hexdocs.pm/)
   timestamp into date and time of day in a time zone.
 - `tzif/parser` has functions and records for parsing TZif formatted data.
 
 The most straightforward use would be to load the database from the default
 location on the operating system, and then obtain a timestamp using the
-[gleam_time](https://hexdocs.pm/gleam_time/) package, and convert that timestamp
+[gleam_time](https://gleam-time.hexdocs.pm/) package, and convert that timestamp
 into a time of day in a time zone using the IANA time zone name. An example
 of that is shown in the code below.
 
@@ -82,6 +82,12 @@ Time zone information is frequently updated, therefore it makes sense to use the
 package manager for your operating system to keep the time zone database up to
 date. All common unix variants have time zone database packages and install the
 time zone database files into the `/usr/share/zoneinfo` directory by default.
+
+If, however, your system does not have time zone data installed, you can use
+the [zones](https://zones.hexdocs.pm/) package to install a database of
+timezone data as a gleam library and dependency. To use the zones timezone
+data get the database using the `zones.database` function rather than
+`database.load_from_os` or `database.load_from_path`.
 
 ## MacOS
 The files should be included in your operating system by default. Check the
@@ -148,7 +154,6 @@ Similarly, using DNF:
 sudo dnf install tzdata
 ```
 ## Windows
-Microsoft Windows has a different mechanism for handling time zones, however
-you can install the IANA Time Zone Database by [downloading the latest
-version](https://www.iana.org/time-zones) and compiling the zone files using
-[the directions in the repository](https://data.iana.org/time-zones/tz-link.html).
+Microsoft Windows has a different mechanism for handling time zones, so we
+recommend using the [zones](https://zones.hexdocs.pm/) portable gleam timezone
+data library.
