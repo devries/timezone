@@ -55,15 +55,6 @@ pub fn add_tzfile(
   TzDatabase(namelist, dict.insert(db.zone_data, zone_name, tzfile))
 }
 
-pub fn add_rawdata(
-  db: TzDatabase,
-  zone_name: String,
-  data: BitArray,
-) -> Result(TzDatabase, parser.TzFileError) {
-  use timeinfo <- result.map(parser.parse(data))
-  add_tzfile(db, zone_name, timeinfo)
-}
-
 /// Get all list of all time zone names within the
 /// time zone database.
 pub fn get_available_timezones(db: TzDatabase) -> List(String) {
