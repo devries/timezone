@@ -46,10 +46,10 @@ pub type TimeAndZone {
 ///
 /// ```gleam
 /// import gleam/time/timestamp
-/// import tzif/database
+/// import tzif/loader
 ///
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
-/// let assert Ok(db) = database.load_from_os()
+/// let assert Ok(db) = loader.load_from_os()
 /// 
 /// to_time_and_zone(ts, "America/New_York", db)
 /// // Ok(TimeAndZone(
@@ -90,10 +90,10 @@ pub fn to_time_and_zone(
 ///
 /// ```gleam
 /// import gleam/time/timestamp
-/// import tzif/database
+/// import zones
 ///
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
-/// let assert Ok(db) = database.load_from_os()
+/// let db = zones.load_from_os()
 /// 
 /// to_calendar(ts, "America/New_York", db)
 /// // Ok(#(
@@ -124,9 +124,9 @@ pub fn to_calendar(
 ///
 /// ```gleam
 /// import gleam/time/calendar
-/// import tzif/database
+/// import tzif/loader
 ///
-/// let assert Ok(db) = database.load_from_os()
+/// let assert Ok(db) = loader.load_from_os()
 /// 
 /// from_calendar(
 ///   calendar.Date(2025, calendar.November, 2),
