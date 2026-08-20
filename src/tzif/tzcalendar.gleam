@@ -3,12 +3,13 @@
 //// time zone.
 ////
 //// This library makes use of the [IANA tz database](https://www.iana.org/time-zones)
-//// which is generally already installed on computers.
+//// formatted data.
 //// This library will search for timezone data in the TZif or [tzfile](https://www.man7.org/linux/man-pages/man5/tzfile.5.html)
-//// file format. These are generally located in the `/usr/share/zoneinfo`
+//// binary format. These are generally located in the `/usr/share/zoneinfo`
 //// directory on posix systems, however if they are installed elsewhere the
-//// then they can be loaded ysung the full path of the directory
-//// containing the tz database files.
+//// then they can be loaded using the full path of the directory
+//// containing the tz database files. They can also be installed by adding the
+//// [zones](https://zones.hexdocs.pm) gleam package to your project.
 ////
 //// Time zone identifiers are generally of the form "Continent/City" for example
 //// `America/New_York`, `Europe/Amsterdam`, or `Asia/Tokyo`. A list of time zone
@@ -93,7 +94,7 @@ pub fn to_time_and_zone(
 /// import zones
 ///
 /// let ts = timestamp.from_unix_seconds(1_758_223_300)
-/// let db = zones.load_from_os()
+/// let db = zones.database()
 /// 
 /// to_calendar(ts, "America/New_York", db)
 /// // Ok(#(

@@ -1,3 +1,8 @@
+## v2.0.0 - 2026-08-??
+- Move the timezone file loader to a separate package to make this usable
+  on web browsers.
+- Update documentation to reflect the changes.
+
 ## v1.1.3 - 2026-08-08
 - Add references to the zones gleam package with portable timezone data.
 - Update documentation.

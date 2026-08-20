@@ -10,23 +10,31 @@ This package includes a parser for the Time Zone Information Format (TZif) or
 in the given time zone.
 
 There are two ways to obtain the timezone data:
-- The [gleam_time](https://gleam-time.hexdocs.pm/) package maintains up to date
+- The [zones](https://zones.hexdocs.pm/) package maintains up to date
     time zone data in a native gleam package format. This is the recommended
     method for code running in the browser, docker containers, and the Windows
     operating system.
+
+    Add to your project with the command:
+
+    ```
+    gleam add tzif@2 zones
+    ```
+    
 - The [tzif_loader](https://tzif-loader.hexdocs.pm/) package will load the
     operating system default time zone files from their standard location in
     Linux and MacOS operating systems.
+
+    Add to your project with the command:
+
+    ```
+    gleam add tzif@2 tzif_loader
+    ```
 
 > We could really do with a timezone database package with a
 > fn(Timestamp, Zone) -> #(Date, TimeOfDay) function
 >
 > --- Louis Pilfold
-
-Add to your project with the command:
-```
-gleam add tzif@2
-```
 
 # Using the Package
 There are three modules in the `tzif` package:
