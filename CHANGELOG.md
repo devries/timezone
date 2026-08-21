@@ -1,4 +1,4 @@
-## v2.0.0 - 2026-08-??
+## v2.0.0 - 2026-08-21
 - Move the timezone file loader to a separate package to make this usable
   on web browsers.
 - Update documentation to reflect the changes.
