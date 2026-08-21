@@ -6,6 +6,7 @@ import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
 import tzif/database
+import tzif/loader
 import tzif/tzcalendar
 
 pub fn main() {
@@ -17,7 +18,7 @@ pub fn main() {
 }
 
 fn print_all_times(now: timestamp.Timestamp) -> Result(Nil, Nil) {
-  use db <- result.map(database.load_from_os())
+  use db <- result.map(loader.load_from_os())
 
   database.get_available_timezones(db)
   |> list.map(fn(zone_name) {

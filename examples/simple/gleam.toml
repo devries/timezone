@@ -14,14 +14,8 @@ version = "1.0.0"
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
-tzif = {
-  git = "https://github.com/devries/timezone",
-  ref = "dfe650b9f761719b999511efbee7b902ed22c04f"
-}
-tzif_loader = {
-  git = "https://github.com/devries/tzif_loader",
-  ref = "2d64d20a4f6b1da6c48b3eaa5c49887f92885f0c"
-}
+tzif = ">= 2.0.0 and < 3.0.0"
+tzif_loader = ">= 1.0.0 and < 2.0.0"
 gleam_time = ">= 1.4.0 and < 2.0.0"
 
 [dev-dependencies]

@@ -3,13 +3,14 @@ import gleam/io
 import gleam/string
 import gleam/time/timestamp
 import tzif/database
+import tzif/loader
 import tzif/tzcalendar
 
 pub fn main() {
   let now = timestamp.system_time()
 
   // Load the database from the operating system
-  case database.load_from_os() {
+  case loader.load_from_os() {
     Error(Nil) ->
       io.println("No parsable TZif files found in default location.")
     Ok(db) -> {

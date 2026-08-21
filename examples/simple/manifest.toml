@@ -12,13 +12,13 @@ packages = [
   { name = "gleam_time", version = "1.8.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_time", source = "hex", outer_checksum = "533D8723774D61AD4998324F5DD1DABDCDBFABAFB9E87CB5D03C6955448FC97D" },
   { name = "gleeunit", version = "1.11.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "EC31ABA74256AEA531EDF8169931D775BBB384FED0A8A1BDC4DD9354E3E21826" },
   { name = "simplifile", version = "2.7.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "A2727627B063E87351934C7F7F008F2D1FDB16F6DE0B8C79F9E46459CFC9C164" },
-  { name = "tzif", version = "1.1.3", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib", "gleam_time", "simplifile"], source = "git", repo = "https://github.com/devries/timezone", commit = "dfe650b9f761719b999511efbee7b902ed22c04f" },
-  { name = "tzif_loader", version = "1.0.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib", "gleam_time", "simplifile", "tzif"], source = "git", repo = "https://github.com/devries/tzif_loader", commit = "2d64d20a4f6b1da6c48b3eaa5c49887f92885f0c" },
+  { name = "tzif", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "gleam_time"], otp_app = "tzif", source = "hex", outer_checksum = "B6B746D79334D7E9283B33B61365065804B1BEA99A79BF2AB7402434CF6466E0" },
+  { name = "tzif_loader", version = "1.0.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib", "gleam_time", "simplifile", "tzif"], otp_app = "tzif_loader", source = "hex", outer_checksum = "FB115DF4D4ECDC87924E7FC93EB1298B40FB68DA438F56A0F6AEB5771CA05068" },
 ]
 
 [requirements]
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleam_time = { version = ">= 1.4.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
-tzif = { git = "https://github.com/devries/timezone", ref = "dfe650b9f761719b999511efbee7b902ed22c04f" }
-tzif_loader = { git = "https://github.com/devries/tzif_loader", ref = "2d64d20a4f6b1da6c48b3eaa5c49887f92885f0c" }
+tzif = { version = ">= 2.0.0 and < 3.0.0" }
+tzif_loader = { version = ">= 1.0.0 and < 2.0.0" }
