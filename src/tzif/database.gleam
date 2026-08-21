@@ -2,14 +2,12 @@
 //// from TZif formatted data you provide, or timezone data loaded from the
 //// operating system. 
 
-import filepath
 import gleam/dict
 import gleam/list
 import gleam/result
 import gleam/string
 import gleam/time/duration.{type Duration}
 import gleam/time/timestamp
-import simplifile
 import tzif/parser
 
 /// Time Zone Database record. This is typically created by
@@ -31,42 +29,6 @@ pub type TzDatabaseError {
   /// Information, including UTC offset, zone designation, or leap
   /// second information was not found for this time zone.
   InfoNotFound
-}
-
-/// Load time zone database from default operating system location
-/// which is typically "/usr/share/zoneinfo". If no parsable TZif
-/// files were found, returns `Error(Nil)`.
-pub fn load_from_os() -> Result(TzDatabase, Nil) {
-  load_from_path("/usr/share/zoneinfo")
-}
-
-/// Load time zone database from provided directory. This is
-/// useful if you have compiled your own version of the [IANA
-/// time zone database](https://data.iana.org/time-zones/tz-link.html)
-/// or they are not stored in the standard location. If no
-/// parsable TZif files were found, returns `Error(Nil)`.
-pub fn load_from_path(path: String) -> Result(TzDatabase, Nil) {
-  let parts = filepath.split(path)
-  let drop_number = list.length(parts)
-  use filenames <- result.try(
-    simplifile.get_files(path) |> result.replace_error(Nil),
-  )
-
-  let data =
-    filenames
-    |> list.map(process_tzfile(_, drop_number))
-    |> result.values
-
-  // If no parsable zone files were found return an Error rather than
-  // fail silently.
-  case list.length(data) {
-    0 -> Error(Nil)
-    _ ->
-      Ok(TzDatabase(
-        list.map(data, fn(v) { v.0 }) |> list.sort(string.compare),
-        dict.from_list(data),
-      ))
-  }
 }
 
 /// Create new empty TzDatabase. This can be useful if you
@@ -91,23 +53,6 @@ pub fn add_tzfile(
     False -> [zone_name, ..db.zone_names] |> list.sort(string.compare)
   }
   TzDatabase(namelist, dict.insert(db.zone_data, zone_name, tzfile))
-}
-
-fn process_tzfile(
-  filename: String,
-  components_to_drop: Int,
-) -> Result(#(String, parser.TzFile), Nil) {
-  let zone_name =
-    filepath.split(filename)
-    |> list.drop(components_to_drop)
-    |> list.fold("", filepath.join)
-
-  use tzdata <- result.try(
-    simplifile.read_bits(filename) |> result.replace_error(Nil),
-  )
-  use timeinfo <- result.try(parser.parse(tzdata) |> result.replace_error(Nil))
-
-  Ok(#(zone_name, timeinfo))
 }
 
 /// Get all list of all time zone names within the
